@@ -27,7 +27,7 @@ public class UserDetailsImpl implements UserDetails{
         return new UserDetailsImpl(user.getId(), user.getEmail(), user.getName(), user.getPassword(), authorities);
     }
 
-    @Override public String getUsername(){return email;}
+    @Override public String getUsername(){return email;} // 用 Email 當帳號
 
     @Override public boolean isAccountNonExpired() {return true;}
     @Override public boolean isAccountNonLocked() {return true;}
