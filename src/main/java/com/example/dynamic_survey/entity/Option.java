@@ -21,7 +21,7 @@ public class Option {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id", nullable = false)
-    private Qusetion question;
+    private Question question;
 
     @Column(nullable = false) private String optionText;
     @Column(nullable = false) private int orderIndex;

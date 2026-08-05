@@ -36,7 +36,7 @@ public class Survey {
 
     @OneToMany(mappedBy = "survey", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("ordexIndex ASC")
-    private List<Qusetion> qusetions = new ArrayList<>();
+    private List<Question> qusetions = new ArrayList<>();
 
     
 }

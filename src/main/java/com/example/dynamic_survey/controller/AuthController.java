@@ -23,11 +23,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public AppResponse<?> login(@Valid @RequestBody LoginRequest loginRequest) {
-        try {
-            return authService.authenticateUser(loginRequest);
-        } catch (Exception e) {
-            return AppResponse.error(RspCode.UNAUTHORIZED, "帳號或密碼錯誤");
-        }
+        return authService.authenticateUser(loginRequest);
     }
 
     @PostMapping("/register")

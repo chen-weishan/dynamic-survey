@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import com.example.dynamic_survey.dto.LoginRequest;
 import com.example.dynamic_survey.dto.RegisterRequest;
 import com.example.dynamic_survey.entity.User;
+import com.example.dynamic_survey.exception.BizException;
 import com.example.dynamic_survey.repository.UserRepository;
 import com.example.dynamic_survey.security.JwtUtil;
 import com.example.dynamic_survey.security.UserDetailsImpl;
@@ -31,12 +32,12 @@ public class AuthService {
 
     public AppResponse<?> registerUser(RegisterRequest signUpRequest) {
         if (userRepository.existsByEmail(signUpRequest.email())) {
-            return AppResponse.error(RspCode.DUPLICATE_ERROR, "錯誤！此電子郵件已被使用");
+            throw new BizException(RspCode.DUPLICATE_ERROR, "錯誤！此電子郵件已被使用");
         }
         User user = new User();
         user.setEmail(signUpRequest.email());
-        user.setPassword(encoder.encode(signUpRequest.password()));
         user.setName(signUpRequest.name());
+        user.setPassword(encoder.encode(signUpRequest.password()));
         user.setPhone(signUpRequest.phone());
         user.setRole("ADMIN");
         userRepository.save(user);
@@ -64,21 +65,18 @@ public class AuthService {
     public AppResponse<?> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getPrincipal().equals("anonymousUser")) {
-            return AppResponse.error(RspCode.UNAUTHORIZED);
+            throw new BizException(RspCode.UNAUTHORIZED);
         }
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        User user = userRepository.findById(userDetails.getId()).orElse(null);
-        if (user == null)
-            return AppResponse.error(RspCode.NOT_FOUND);
+        User user = userRepository.findById(userDetails.getId()).orElseThrow(() -> new BizException(RspCode.NOT_FOUND));
         return AppResponse.success(userToMap(user));
     }
 
     public AppResponse<?> updateProfile(Map<String, String> updates) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UserDetailsImpl userDetailsImpl = (UserDetailsImpl) authentication.getPrincipal();
-        User user = userRepository.findById(userDetailsImpl.getId()).orElse(null);
-        if (user == null)
-            return AppResponse.error(RspCode.NOT_FOUND);
+        User user = userRepository.findById(userDetailsImpl.getId())
+                .orElseThrow(() -> new BizException(RspCode.NOT_FOUND));
         if (updates.containsKey("name"))
             user.setName(updates.get("name"));
         if (updates.containsKey("phone"))
