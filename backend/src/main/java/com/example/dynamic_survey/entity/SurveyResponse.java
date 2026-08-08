@@ -42,7 +42,6 @@ public class SurveyResponse {
     private User user;
 
     @OneToMany(mappedBy = "surveyResponse", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("orderIndex ASC")
     private List<ResponseAnswer> answers = new ArrayList<>();
 
 
