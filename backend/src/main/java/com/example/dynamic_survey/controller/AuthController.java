@@ -9,7 +9,6 @@ import com.example.dynamic_survey.dto.LoginRequest;
 import com.example.dynamic_survey.dto.RegisterRequest;
 import com.example.dynamic_survey.service.AuthService;
 import com.example.dynamic_survey.vo.AppResponse;
-import com.example.dynamic_survey.vo.RspCode;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

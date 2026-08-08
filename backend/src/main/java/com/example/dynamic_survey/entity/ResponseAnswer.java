@@ -30,7 +30,7 @@ public class ResponseAnswer {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "qusetion_id", nullable = false)
-    private Question qusetion;
+    private Question question;
 
     @ManyToMany //一個Answer有多個Option，多個Answer可含相同的Option
     @JoinTable(name = "answer_selected_options", joinColumns = @JoinColumn(name = "answer_id"), inverseJoinColumns = @JoinColumn(name = "option_id"))

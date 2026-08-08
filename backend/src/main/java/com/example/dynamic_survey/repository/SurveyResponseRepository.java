@@ -9,7 +9,7 @@ import com.example.dynamic_survey.entity.User;
 
 public interface SurveyResponseRepository extends JpaRepository<SurveyResponse, Long> {
     // 個人歷史紀錄 (依提交時間新到舊)
-    List<SurveyResponse> findByUserOrderBySubbmitedAtDesc(User user);
+    List<SurveyResponse> findByUserOrderBySubmittedAtDesc(User user);
 
     // 統計用：取得某問卷所有回覆
     List<SurveyResponse> findBySurveyId(Long surveyId);

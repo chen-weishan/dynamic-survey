@@ -35,10 +35,10 @@ public class SurveyResponse {
     @Column(nullable = false)private String email;
 
     @Column private Integer age;
-    @Column(nullable = false)private LocalDateTime subbmitedAt;
+    @Column(nullable = false)private LocalDateTime submittedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = true)
     private User user;
 
     @OneToMany(mappedBy = "surveyResponse", cascade = CascadeType.ALL, orphanRemoval = true)
