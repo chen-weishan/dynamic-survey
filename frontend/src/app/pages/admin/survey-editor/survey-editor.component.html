@@ -2,6 +2,16 @@
   <!-- STEP 0: 基本資訊與日期 -->
   @if (activeStep() === 0) {
   <mat-form-field appearance="outline">
+    <mat-label>問卷標題</mat-label>
+    <input matInput formControlName="title" maxlength="50" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>問卷說明</mat-label>
+    <textarea matInput formControlName="description" rows="3" maxlength="300"></textarea>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
     <mat-label>開始日期</mat-label>
     <input matInput [matDatepicker]="startPicker" formControlName="startDate" />
     <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
