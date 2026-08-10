@@ -84,4 +84,36 @@ describe('SurveyEditorComponent', () => {
     fixture.detectChanges();
 
     expect(component.activeStep()).toBe(2);
-  });});
+  });
+
+  it('基本資料沒填完時，應切回 STEP 0 並標記欄位為 touched', () => {
+    // 只填題目與選項，STEP 0 留空
+    component.activeStep.set(1);
+    fixture.detectChanges();
+    const step1Inputs = inputs();
+    typeInto(step1Inputs[0], '你最喜歡哪個顏色？');
+    step1Inputs.slice(1).forEach((el, i) => typeInto(el, `選項 ${i + 1}`));
+
+    clickButtonWithText('下一步：預覽確認');
+
+    expect(component.activeStep()).toBe(0);
+    expect(component.surveyForm.get('title')?.touched).toBe(true);
+  });
+
+  it('題目沒填完時，應留在 STEP 1', () => {
+    const byName = (name: string) =>
+      fixture.nativeElement.querySelector(
+        `[formControlName="${name}"]`,
+      ) as HTMLInputElement;
+    typeInto(byName('title'), '員工滿意度調查');
+    typeInto(byName('startDate'), '2026-01-01');
+    typeInto(byName('endDate'), '2026-12-31');
+    clickButtonWithText('下一步：設定題目');
+
+    // 題目標題與選項都不填，直接下一步
+    clickButtonWithText('下一步：預覽確認');
+
+    expect(component.activeStep()).toBe(1);
+    expect(component.questionsArray.at(0).get('title')?.touched).toBe(true);
+  });
+});

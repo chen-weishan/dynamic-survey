@@ -109,9 +109,19 @@ export class SurveyEditorComponent implements OnInit {
     }
   }
 
+  // STEP 0 的欄位是否有無效值
+  private basicInfoInvalid(): boolean {
+    return ['title', 'description', 'startDate', 'endDate'].some(
+      (name) => this.surveyForm.get(name)?.invalid,
+    );
+  }
+
   // 進確認頁前，整理成 DTO 並存入 Session
   goToConfirm() {
     if (this.surveyForm.invalid) {
+      this.surveyForm.markAllAsTouched(); // 讓無效欄位標紅
+      // 錯的是基本資料時切回 STEP 0，否則使用者看不到出問題的欄位
+      if (this.basicInfoInvalid()) this.activeStep.set(0);
       this.snackBar.open('請填寫完整資訊', '關閉', { duration: 3000 });
       return;
     }
