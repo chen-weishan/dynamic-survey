@@ -1,0 +1,28 @@
+@for (q of stats()?.questionStats; track q.questionId) {
+<mat-card>
+  <mat-card-title>{{ $index + 1 }}. {{ q.questionTitle }}</mat-card-title>
+  <mat-card-content class="p-6">
+    @if (q.type !== 'TEXT') {
+    <div class="flex flex-col gap-8">
+      <div class="w-full" style="max-width: 300px;">
+        <canvas baseChart [data]="getChartData(q)" [options]="pieChartOptions" [type]="'pie'"></canvas>
+      </div>
+      <table class="w-full text-sm">
+        @for (opt of (q.optionStats | keyvalue); track opt.key) {
+        <tr class="border-b">
+          <td class="p-2">{{ opt.value.optionText }}</td>
+          <td class="p-2 text-right">{{ opt.value.count }}</td>
+          <td class="p-2 text-right text-accent">{{ opt.value.percentage }}%</td>
+        </tr>
+        }
+      </table>
+      @for (ans of q.textAnswers; track $index) {
+      <div class="bg-white p-3 rounded shadow-sm mb-2 border-accent-l">
+        {{ ans }}
+      </div>
+      }
+    </div>
+    }
+  </mat-card-content>
+</mat-card>
+}
