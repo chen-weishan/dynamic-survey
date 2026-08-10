@@ -11,3 +11,6 @@ Thumbs.db
 .gradle/
 bin/
 build/
+
+# Claude Code 本機設定（preview 啟動設定等）
+.claude/
