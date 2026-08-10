@@ -1,0 +1,46 @@
+<div class="p-6 max-w-3xl mx-auto">
+  <h1 class="text-2xl font-bold text-gray-800 mb-6">問卷回饋</h1>
+  <!-- ... 表格欄位見下一頁 -->
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    <table mat-table [dataSource]="responses()" class="w-full">
+      <ng-container matColumnDef="index">
+        <th mat-header-cell *matHeaderCellDef>編號</th>
+        <td mat-cell *matCellDef="let r; let i = index">#{{ i + 1 }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="userName">
+        <th mat-header-cell *matHeaderCellDef>姓名</th>
+        <td mat-cell *matCellDef="let r">{{ r.userName }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="submittedAt">
+        <th mat-header-cell *matHeaderCellDef>填寫時間</th>
+        <td mat-cell *matCellDef="let r">
+          {{ r.submittedAt | date: "yyyy-MM-dd HH:mm" }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef class="text-right">觀看回覆</th>
+        <td mat-cell *matCellDef="let r" class="text-right">
+          <a
+            [routerLink]="['/history', r.responseId]"
+            class="text-indigo-600 hover:underline"
+            >前往</a
+          >
+        </td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      <tr class="mat-row" *matNoDataRow>
+        <td class="mat-cell p-8 text-center" colspan="4">
+          目前還沒有人填寫這份問卷。
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="flex justify-center mt-6">
+    <button mat-stroked-button routerLink="/admin">返回問卷管理</button>
+  </div>
+</div>

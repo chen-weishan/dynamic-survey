@@ -1,0 +1,32 @@
+<table mat-table [dataSource]="history()" class="w-full">
+  <ng-container matColumnDef="index">
+    <th mat-header-cell *matHeaderCellDef>#</th>
+    <td mat-cell *matCellDef="let h; let i = index">{{ i + 1 }}</td>
+  </ng-container>
+  <ng-container matColumnDef="surveyTitle">
+    <th mat-header-cell *matHeaderCellDef>問卷名稱</th>
+    <td mat-cell *matCellDef="let h">{{ h.surveyTitle }}</td>
+  </ng-container>
+  <ng-container matColumnDef="submittedAt">
+    <th mat-header-cell *matHeaderCellDef>提交時間</th>
+    <td mat-cell *matCellDef="let h">
+      {{ h.submittedAt | date: "yyyy-MM-dd HH:mm" }}
+    </td>
+  </ng-container>
+  <ng-container matColumnDef="actions">
+    <th mat-header-cell *matHeaderCellDef class="text-right">操作</th>
+    <td mat-cell *matCellDef="let h" class="text-right">
+      <button
+        mat-icon-button
+        color="primary"
+        [routerLink]="['/history', h.responseId]"
+        title="查看作答內容"
+      >
+        <mat-icon>visibility</mat-icon>
+      </button>
+    </td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+</table>

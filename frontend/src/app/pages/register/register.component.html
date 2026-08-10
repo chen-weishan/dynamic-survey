@@ -1,0 +1,39 @@
+<form
+  [formGroup]="registerForm"
+  (ngSubmit)="onSubmit()"
+  class="flex flex-col gap-4"
+>
+  <mat-form-field appearance="outline">
+    <mat-label>姓名 (Name)</mat-label>
+    <input matInput formControlName="name" />
+    @if (registerForm.get("name")?.hasError("required")) {
+      <mat-error>姓名為必填</mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>電子郵件 (Email)</mat-label>
+    <input matInput formControlName="email" type="email" />
+    @if (registerForm.get("email")?.hasError("email")) {
+      <mat-error>Email 格式錯誤</mat-error>
+    }
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>密碼 (Password)</mat-label>
+    <input matInput formControlName="password" type="password" />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>電話 (Phone)</mat-label>
+    <input matInput formControlName="phone" />
+  </mat-form-field>
+
+  <button
+    mat-raised-button
+    color="primary"
+    type="submit"
+    [disabled]="registerForm.invalid"
+  >
+    確認註冊
+  </button>
+</form>

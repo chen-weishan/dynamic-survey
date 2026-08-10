@@ -1,0 +1,156 @@
+<form [formGroup]="surveyForm">
+  <!-- STEP 0: 基本資訊與日期 -->
+  @if (activeStep() === 0) {
+  <mat-form-field appearance="outline">
+    <mat-label>開始日期</mat-label>
+    <input matInput [matDatepicker]="startPicker" formControlName="startDate" />
+    <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+    <mat-datepicker #startPicker></mat-datepicker>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>結束日期</mat-label>
+    <input matInput [matDatepicker]="endPicker" formControlName="endDate" />
+    <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+    <mat-datepicker #endPicker></mat-datepicker>
+  </mat-form-field>
+
+  <button type="button" mat-raised-button color="primary" (click)="activeStep.set(1)">
+    下一步：設定題目
+  </button>
+  }
+
+  <!-- STEP 1: 題目設定 -->
+  @if (activeStep() === 1) {
+  <div formArrayName="questions" class="flex flex-col gap-5">
+    <!-- 題目列表迴圈 -->
+    @for (q of questionsArray.controls; track q; let i = $index) {
+    <div [formGroupName]="i" class="p-4 border rounded-xl bg-subtle">
+      <div class="flex justify-between mb-3">
+        <span class="text-xl font-bold">題目 #{{ i + 1 }}</span>
+        <button type="button" mat-icon-button color="warn" (click)="removeQuestion(i)"
+          [disabled]="questionsArray.length === 1">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </div>
+
+      <mat-form-field appearance="outline" class="w-full mb-3">
+        <mat-label>題目標題</mat-label>
+        <input matInput formControlName="title" />
+      </mat-form-field>
+
+      <mat-button-toggle-group formControlName="type" (change)="onTypeChange(i)" class="mb-3">
+        @for (t of questionTypes; track t.value) {
+        <mat-button-toggle [value]="t.value">
+          {{ t.label }}
+        </mat-button-toggle>
+        }
+      </mat-button-toggle-group>
+
+      <mat-checkbox formControlName="required" class="ml-4">必填</mat-checkbox>
+
+      <!-- 選項區域 (只有非純文字題時顯示) -->
+      @if (q.get("type")?.value !== "TEXT") {
+      <div formArrayName="options" class="flex flex-col gap-2 mt-3">
+        @for (
+        opt of getOptionsArray(i).controls;
+        track opt;
+        let j = $index
+        ) {
+        <div [formGroupName]="j" class="flex items-center gap-2">
+          <mat-form-field appearance="outline" class="flex-grow">
+            <input matInput formControlName="optionText" placeholder="選項內容" />
+          </mat-form-field>
+          <button type="button" mat-icon-button (click)="removeOption(i, j)"
+            [disabled]="getOptionsArray(i).length <= 1">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+        }
+
+        <!-- 「新增選項」應放在選項迴圈外，卡片內部 -->
+        <button type="button" mat-stroked-button class="self-start mt-2" (click)="addOption(getOptionsArray(i))">
+          <mat-icon>add</mat-icon> 新增選項
+        </button>
+      </div>
+      }
+    </div>
+    }
+
+    <!-- 「新增題目」應放在題目迴圈外 -->
+    <button type="button" mat-stroked-button (click)="addQuestion()">
+      <mat-icon>add</mat-icon> 新增題目
+    </button>
+
+    <!-- 步驟切換按鈕應放在所有題目外 -->
+    <div class="flex gap-4 mt-4">
+      <button type="button" mat-stroked-button (click)="activeStep.set(0)">
+        上一步
+      </button>
+      <button type="button" mat-raised-button color="primary" (click)="goToConfirm()">
+        下一步：預覽確認
+      </button>
+    </div>
+  </div>
+  }
+
+  <!-- STEP 2: 預覽 + 儲存 -->
+  @else if (activeStep() === 2) {
+  <div class="bg-indigo-50 p-4 rounded-lg mb-6 border border-indigo-100">
+    <p class="mb-1">
+      <strong>問卷名稱：</strong> {{ surveyForm.get("title")?.value }}
+    </p>
+    <p class="mb-1">
+      <strong>問卷說明：</strong> {{ surveyForm.get("description")?.value }}
+    </p>
+    <p>
+      <strong>開放期間：</strong>
+      {{ surveyForm.get("startDate")?.value | date: "yyyy-MM-dd" }}
+      ~ {{ surveyForm.get("endDate")?.value | date: "yyyy-MM-dd" }}
+    </p>
+  </div>
+
+  <div class="flex flex-col gap-4 mb-6">
+    @for (q of surveyForm.value.questions; track $index) {
+    <div class="p-3 border-b border-gray-200">
+      <p class="font-bold">
+        {{ $index + 1 }}. {{ q.title }}
+        <span class="text-gray-500 text-sm font-normal ml-2">
+          ({{
+          q.type === "SINGLE"
+          ? "單選"
+          : q.type === "MULTI"
+          ? "多選"
+          : "文字"
+          }})
+        </span>
+        @if (q.required) {
+        <span class="text-red-500 ml-1">*</span>
+        }
+      </p>
+      @if (q.type !== "TEXT") {
+      <div class="flex flex-wrap gap-2 mt-2">
+        @for (opt of q.options; track $index) {
+        <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">
+          {{ opt.optionText }}
+        </span>
+        }
+      </div>
+      }
+    </div>
+    }
+  </div>
+
+  <div class="flex justify-center gap-4 pt-4 border-t">
+    <button type="button" mat-stroked-button (click)="activeStep.set(1)">
+      返回修改
+    </button>
+    <button type="button" mat-stroked-button (click)="onFinalSubmit(false)">
+      僅儲存 (草稿)
+    </button>
+    <button type="submit" mat-raised-button color="accent" (click)="onFinalSubmit(true)">
+      儲存並發佈
+    </button>
+  </div>
+  }
+</form>
