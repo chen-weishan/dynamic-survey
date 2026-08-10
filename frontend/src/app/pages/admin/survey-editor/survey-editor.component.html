@@ -4,6 +4,7 @@
   <mat-form-field appearance="outline">
     <mat-label>問卷標題</mat-label>
     <input matInput formControlName="title" maxlength="50" />
+    <mat-error>請填寫問卷標題</mat-error>
   </mat-form-field>
 
   <mat-form-field appearance="outline">
@@ -16,6 +17,7 @@
     <input matInput [matDatepicker]="startPicker" formControlName="startDate" />
     <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
     <mat-datepicker #startPicker></mat-datepicker>
+    <mat-error>請選擇開始日期</mat-error>
   </mat-form-field>
 
   <mat-form-field appearance="outline">
@@ -23,6 +25,7 @@
     <input matInput [matDatepicker]="endPicker" formControlName="endDate" />
     <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
     <mat-datepicker #endPicker></mat-datepicker>
+    <mat-error>請選擇結束日期</mat-error>
   </mat-form-field>
 
   <button type="button" mat-raised-button color="primary" (click)="activeStep.set(1)">
@@ -47,6 +50,7 @@
       <mat-form-field appearance="outline" class="w-full mb-3">
         <mat-label>題目標題</mat-label>
         <input matInput formControlName="title" />
+        <mat-error>請填寫題目標題</mat-error>
       </mat-form-field>
 
       <mat-button-toggle-group formControlName="type" (change)="onTypeChange(i)" class="mb-3">
@@ -70,6 +74,7 @@
         <div [formGroupName]="j" class="flex items-center gap-2">
           <mat-form-field appearance="outline" class="flex-grow">
             <input matInput formControlName="optionText" placeholder="選項內容" />
+            <mat-error>請填寫選項內容</mat-error>
           </mat-form-field>
           <button type="button" mat-icon-button (click)="removeOption(i, j)"
             [disabled]="getOptionsArray(i).length <= 1">

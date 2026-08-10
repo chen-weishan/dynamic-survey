@@ -98,6 +98,7 @@ describe('SurveyEditorComponent', () => {
 
     expect(component.activeStep()).toBe(0);
     expect(component.surveyForm.get('title')?.touched).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('請填寫問卷標題');
   });
 
   it('題目沒填完時，應留在 STEP 1', () => {
@@ -115,5 +116,7 @@ describe('SurveyEditorComponent', () => {
 
     expect(component.activeStep()).toBe(1);
     expect(component.questionsArray.at(0).get('title')?.touched).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('請填寫題目標題');
+    expect(fixture.nativeElement.textContent).toContain('請填寫選項內容');
   });
 });
