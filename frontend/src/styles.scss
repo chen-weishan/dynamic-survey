@@ -38,6 +38,18 @@ html {
   border-right: none !important;
 }
 
+/* Angular Material 的 .mdc-text-field__input 會把原生日期欄位的日曆圖示設成 display:none，
+   造成 <input matInput type="date"> 只能手動輸入、點不出日期選擇器；這裡還原圖示 */
+.mat-mdc-form-field input[type='date']::-webkit-calendar-picker-indicator {
+  display: block;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.mat-mdc-form-field input[type='date']::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
 /* 共用版面 utility class（取代第三方 CSS 框架，全站頁面共用） */
 .flex {
   display: flex;
