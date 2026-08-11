@@ -1,19 +1,86 @@
-<mat-toolbar color="primary" class="flex justify-between items-center shadow-md">
-  <div class="flex items-center gap-2 cursor-pointer" routerLink="/">
-    <mat-icon>assignment</mat-icon>
-    <span class="text-xl font-bold">動態問卷系統</span>
+<!-- scroll 後收縮成浮起的圓角膠囊。這是 design/navbar.txt 那個 21st.dev 參考的核心效果，
+     形狀變化幅度大，是投影機上少數真的傳得過去的動態細節。 -->
+<header
+  class="navbar mx-auto w-full"
+  [class.navbar--scrolled]="scrolled()"
+  [class.navbar--menu-open]="menuOpen()"
+>
+  <nav class="navbar__inner flex items-center justify-between gap-4">
+    <a class="navbar__brand flex items-center gap-2 cursor-pointer" routerLink="/">
+      <mat-icon>assignment</mat-icon>
+      <span class="navbar__wordmark">動態問卷系統</span>
+    </a>
+
+    <!-- 桌機導覽 -->
+    <div class="navbar__links hidden items-center gap-2 md:flex">
+      <app-theme-toggle />
+      <a class="navbar__link" routerLink="/surveys" routerLinkActive="navbar__link--active">問卷查詢</a>
+
+      @if (authService.currentUser()) {
+        <a class="navbar__link" routerLink="/admin" routerLinkActive="navbar__link--active">問卷管理</a>
+        <a class="navbar__link" routerLink="/history" routerLinkActive="navbar__link--active">我的紀錄</a>
+        <span class="navbar__greeting">{{ authService.currentUser()?.name }}</span>
+        <button type="button" class="navbar__cta navbar__cta--ghost" (click)="logout()">登出</button>
+      } @else {
+        <a class="navbar__cta navbar__cta--ghost" routerLink="/login">登入</a>
+        <a class="navbar__cta" routerLink="/register">註冊</a>
+      }
+    </div>
+
+    <!-- 手機漢堡 -->
+    <div class="flex items-center gap-1 md:hidden">
+      <app-theme-toggle />
+      <button
+        type="button"
+        class="navbar__burger"
+        [attr.aria-label]="menuOpen() ? '關閉選單' : '開啟選單'"
+        [attr.aria-expanded]="menuOpen()"
+        (click)="toggleMenu()"
+      >
+        <!-- stroke-dasharray morph：漢堡在展開時折成一條斜線。
+             path 與 dasharray 數值沿用 design/navbar.txt 的 MenuToggleIcon。 -->
+        <svg
+          class="navbar__burger-icon"
+          [class.is-open]="menuOpen()"
+          viewBox="0 0 32 32"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            class="navbar__burger-path"
+            d="M27 10 13 10C10.8 10 9 8.2 9 6 9 3.5 10.8 2 13 2 15.2 2 17 3.8 17 6L17 26C17 28.2 18.8 30 21 30 23.2 30 25 28.2 25 26 25 23.8 23.2 22 21 22L7 22"
+          />
+          <path d="M7 16 27 16" />
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- 手機全螢幕選單 -->
+  <div class="navbar__panel md:hidden" [class.is-open]="menuOpen()">
+    <div class="navbar__panel-inner">
+      <div class="grid gap-2">
+        <a class="navbar__link" routerLink="/surveys" (click)="closeMenu()">問卷查詢</a>
+        @if (authService.currentUser()) {
+          <a class="navbar__link" routerLink="/admin" (click)="closeMenu()">問卷管理</a>
+          <a class="navbar__link" routerLink="/history" (click)="closeMenu()">我的紀錄</a>
+        }
+      </div>
+
+      <div class="flex flex-col gap-2">
+        @if (authService.currentUser()) {
+          <span class="navbar__greeting">{{ authService.currentUser()?.name }}</span>
+          <button type="button" class="navbar__cta navbar__cta--ghost w-full" (click)="logout(); closeMenu()">
+            登出
+          </button>
+        } @else {
+          <a class="navbar__cta navbar__cta--ghost w-full" routerLink="/login" (click)="closeMenu()">登入</a>
+          <a class="navbar__cta w-full" routerLink="/register" (click)="closeMenu()">註冊</a>
+        }
+      </div>
+    </div>
   </div>
-  <div class="flex items-center gap-4">
-    <app-theme-toggle />
-    <button mat-button routerLink="/surveys">問卷查詢</button>
-    @if (authService.currentUser()) {
-      <span>歡迎, {{ authService.currentUser()?.name }}</span>
-      <button mat-button routerLink="/admin">問卷管理</button>
-      <button mat-button routerLink="/history">我的紀錄</button>
-      <button mat-stroked-button color="warn" (click)="logout()">登出</button>
-    } @else {
-      <button mat-button routerLink="/login">登入</button>
-      <button mat-raised-button color="accent" routerLink="/register">註冊</button>
-    }
-  </div>
-</mat-toolbar>
+</header>

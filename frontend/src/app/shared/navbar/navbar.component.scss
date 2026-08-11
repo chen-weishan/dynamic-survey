@@ -1,0 +1,195 @@
+:host {
+  display: block;
+}
+
+/* 未 scroll：貼齊全寬、只有底部一道光邊。
+   scroll 後：收縮成浮起的圓角膠囊。500ms 是刻意的慢 —— 投影機上快動畫會拖影變糊。 */
+.navbar {
+  max-width: 100%;
+  border-radius: 0;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-bottom: 2px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight);
+  transition:
+    max-width 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    margin-top 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    padding 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.navbar--scrolled {
+  max-width: 62rem;
+  margin-top: 0.75rem;
+  border-radius: 1.75rem;
+  border-bottom-color: transparent;
+  border: 2px solid var(--glass-border);
+}
+
+.navbar__inner {
+  padding: 0.75rem 1.5rem;
+  transition: padding 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.navbar--scrolled .navbar__inner {
+  padding: 0.5rem 1rem;
+}
+
+/* ===== 品牌 ===== */
+
+.navbar__brand {
+  color: var(--primary-color);
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.navbar__wordmark {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+/* ===== 導覽連結 ===== */
+
+.navbar__link {
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.75rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 250ms ease, color 250ms ease;
+
+  &:hover {
+    background: var(--glass-bg);
+  }
+}
+
+.navbar__link--active {
+  color: var(--primary-color);
+  background: var(--glass-bg);
+}
+
+.navbar__greeting {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-muted-c);
+  white-space: nowrap;
+}
+
+/* ===== CTA =====
+   刻意用實心高對比，不做玻璃：投影機上半透明按鈕會直接消失。 */
+
+.navbar__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1.2rem;
+  border: 2px solid transparent;
+  border-radius: 0.85rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  background: var(--primary-color);
+  color: var(--bg-beige);
+  text-decoration: none;
+  transition: transform 250ms ease, box-shadow 250ms ease, background-color 250ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px -4px var(--glass-glow);
+  }
+}
+
+.navbar__cta--ghost {
+  background: transparent;
+  color: var(--text-primary);
+  border-color: var(--primary-color);
+}
+
+/* ===== 漢堡 =====
+   stroke-dasharray morph：漢堡在展開時折成一條斜線。
+   path 與 dasharray 數值沿用 design/navbar.txt 的 MenuToggleIcon。 */
+
+.navbar__burger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border: 2px solid var(--primary-color);
+  border-radius: 0.75rem;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.navbar__burger-icon {
+  width: 1.6rem;
+  height: 1.6rem;
+  transition: transform 400ms ease-in-out;
+}
+
+.navbar__burger-icon.is-open {
+  transform: rotate(-45deg);
+}
+
+.navbar__burger-path {
+  stroke-dasharray: 12 63;
+  transition:
+    stroke-dasharray 400ms ease-in-out,
+    stroke-dashoffset 400ms ease-in-out;
+}
+
+.navbar__burger-icon.is-open .navbar__burger-path {
+  stroke-dasharray: 20 300;
+  stroke-dashoffset: -32.42px;
+}
+
+/* ===== 手機選單 ===== */
+
+.navbar__panel {
+  position: fixed;
+  inset: 4.5rem 0 0 0;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-top: 2px solid var(--glass-border);
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.97);
+  transition:
+    opacity 350ms ease-out,
+    transform 350ms ease-out,
+    visibility 350ms;
+}
+
+.navbar__panel.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
+
+.navbar__panel-inner {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .navbar,
+  .navbar__inner,
+  .navbar__burger-icon,
+  .navbar__burger-path,
+  .navbar__panel {
+    transition: none;
+  }
+}
