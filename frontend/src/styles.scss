@@ -45,21 +45,51 @@ body {
      切換的視覺完全交給 ThemeService 的 View Transition 負責。 */
 }
 
-/* 深淺色切換的圓形揭露。
-   關掉 View Transitions 預設的 cross-fade，改由 ThemeService 用 clip-path 動畫
-   讓新配色從觸發按鈕的位置擴散開來；舊畫面壓在下層當底。 */
-::view-transition-old(root),
-::view-transition-new(root) {
-  animation: none;
-  mix-blend-mode: normal;
+/* ===== View Transitions =====
+   兩件事共用同一組偽元素：路由切換與深淺色切換。
+   預設這組是路由過場；ThemeService 切換配色時會在 html 加上 .theme-switching，
+   下面那組較高 specificity 的規則就會停用預設動畫、交給 clip-path 圓形揭露。 */
+
+/* 路由切換：舊頁面往上淡出、新頁面由下浮入。
+   450ms、位移 18px —— 投影機上快動畫會拖影變糊，慢而大才傳得過去。 */
+@keyframes route-out {
+  to {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes route-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
 }
 
 ::view-transition-old(root) {
+  animation: route-out 220ms cubic-bezier(0.4, 0, 1, 1) both;
   z-index: 1;
 }
 
 ::view-transition-new(root) {
+  animation: route-in 450ms cubic-bezier(0.22, 1, 0.36, 1) both;
   z-index: 2;
+}
+
+/* 深淺色切換：停用上面的 cross-fade，
+   由 ThemeService 用 clip-path 讓新配色從按鈕位置擴散，舊畫面壓在下層當底。 */
+html.theme-switching::view-transition-old(root),
+html.theme-switching::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
 }
 
 /* @fontsource 的 material-icons 只提供 @font-face，不像 Google CDN 那份有附 ligature class。
@@ -124,6 +154,11 @@ html {
   --grad-opacity: 0.30;
   /* 中央柔化遮罩：讓內容區後方乾淨、色彩退到畫面邊緣 */
   --veil-color: rgba(255, 255, 255, 0.58);
+
+  /* 玻璃 CTA。底色刻意保留在 0.78 —— 再透就會在投影機上消失 */
+  --btn-glass-bg: rgba(91, 63, 217, 0.78);
+  --btn-glass-text: #FFFFFF;
+  --btn-glass-border: rgba(255, 255, 255, 0.55);
 }
 
 html.dark {
@@ -148,6 +183,12 @@ html.dark {
   --grad-3: #E11D48;
   --grad-opacity: 0.42;
   --veil-color: rgba(13, 10, 31, 0.62);
+
+  /* 深色模式的 CTA：亮紫半透明底 + 近白文字，底色比淺色模式更透
+     （暗底上的亮色本來就更跳，不需要那麼實） */
+  --btn-glass-bg: rgba(139, 92, 246, 0.46);
+  --btn-glass-text: #F5F3FF;
+  --btn-glass-border: rgba(196, 181, 253, 0.60);
 }
 
 /* ===== Level 1 玻璃表面 =====
@@ -303,17 +344,70 @@ mat-toolbar.mat-toolbar {
   }
 }
 
-/* 按鈕刻意不玻璃化：投影機上實心高對比的 CTA 最清楚，
-   半透明按鈕在投影上會直接消失。只統一圓角讓風格一致。 */
 .mat-mdc-raised-button,
 .mat-mdc-unelevated-button,
 .mat-mdc-outlined-button,
 .mat-mdc-button {
-  --mdc-filled-button-container-shape: 0.75rem;
-  --mdc-protected-button-container-shape: 0.75rem;
-  --mdc-outlined-button-container-shape: 0.75rem;
-  --mdc-text-button-container-shape: 0.75rem;
+  --mdc-filled-button-container-shape: 0.85rem;
+  --mdc-protected-button-container-shape: 0.85rem;
+  --mdc-outlined-button-container-shape: 0.85rem;
+  --mdc-text-button-container-shape: 0.85rem;
   font-weight: 600;
+}
+
+/* 實心 CTA（建立新問卷、搜尋…）改為玻璃按鈕。
+   關鍵是「半透明但不透明」：--btn-glass-bg 保留 0.78/0.46 的底色，
+   全透明的玻璃按鈕在投影機上會直接消失，CTA 就不再是 CTA。
+   背景與文字色都必須餵 token —— 直接寫 background 會被 mdc 內部規則蓋掉。 */
+.mat-mdc-raised-button:not(:disabled),
+.mat-mdc-unelevated-button:not(:disabled) {
+  --mdc-protected-button-container-color: var(--btn-glass-bg);
+  --mdc-filled-button-container-color: var(--btn-glass-bg);
+  --mdc-protected-button-label-text-color: var(--btn-glass-text);
+  --mdc-filled-button-label-text-color: var(--btn-glass-text);
+  --mdc-protected-button-container-elevation: var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight);
+
+  border: 2px solid var(--btn-glass-border);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  transition: transform 250ms ease, box-shadow 250ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+/* ===== 進場動畫 =====
+   卡片與玻璃容器由下浮起，依序 stagger。
+   位移 24px、550ms：投影機上快而小的動畫會拖影變糊、觀眾根本沒看到。 */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+.app-main .mat-mdc-card,
+.app-main .bg-white {
+  animation: rise-in 550ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* stagger 寫死 8 階就夠 —— 這些容器在各頁面都是同一個父的兄弟節點。
+   用 nth-child 而非 nth-of-type：容器多是 div，按類型計數反而不準。 */
+@for $i from 1 through 8 {
+
+  .app-main .mat-mdc-card:nth-child(#{$i}),
+  .app-main .bg-white:nth-child(#{$i}) {
+    animation-delay: #{($i - 1) * 70}ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .app-main .mat-mdc-card,
+  .app-main .bg-white {
+    animation: none;
+  }
 }
 
 /* 修正 Angular Material 表單外框的細節 */

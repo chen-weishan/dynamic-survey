@@ -10,6 +10,7 @@ import { ChartConfiguration, ChartData } from 'chart.js';
 import { SurveyService } from '../../../services/survey.service';
 import { SurveyStats, QuestionStats } from '../../../models/survey-stats.model';
 import { ThemeService } from '../../../services/theme.service';
+import { CountUpDirective } from '../../../shared/count-up.directive';
 @Component({
   selector: 'app-survey-stats',
   imports: [
@@ -18,8 +19,8 @@ import { ThemeService } from '../../../services/theme.service';
     MatButtonModule,
     MatIconModule,
     MatDividerModule,
-    RouterLink,
     BaseChartDirective,
+    CountUpDirective,
   ],
   templateUrl: './survey-stats.component.html',
   styleUrl: './survey-stats.component.scss',

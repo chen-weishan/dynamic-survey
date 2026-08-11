@@ -70,11 +70,25 @@ export class ThemeService {
     const x = origin?.x ?? window.innerWidth / 2;
     const y = origin?.y ?? window.innerHeight / 2;
 
-    // 半徑取到最遠的那個角落，否則畫面角落會殘留舊配色
-    const radius = Math.hypot(
-      Math.max(x, window.innerWidth - x),
-      Math.max(y, window.innerHeight - y),
+    // 半徑取到最遠的角落，否則圓形還沒蓋滿畫面動畫就結束，
+    // 剩下的區域會在那一刻瞬間跳成新配色。
+    //
+    // 高度不能只用 innerHeight：頁面可滾動時 root 的快照高度會大於 viewport，
+    // 用 innerHeight 算出來的半徑偏小，症狀就是「擴散到底部附近就突然結束」。
+    // 再乘 1.12 當安全邊際 —— 超出畫面的部分反正看不到，寧可多擴散一點。
+    const effectiveHeight = Math.max(
+      window.innerHeight,
+      document.documentElement.scrollHeight,
     );
+    const radius =
+      Math.hypot(
+        Math.max(x, window.innerWidth - x),
+        Math.max(y, effectiveHeight - y),
+      ) * 1.12;
+
+    // 路由切換也用 View Transitions，但兩者要的動畫不同。
+    // 這個 class 讓 CSS 只在「切換配色」時停用預設的 cross-fade。
+    document.documentElement.classList.add('theme-switching');
 
     const transition = doc.startViewTransition(() => this.apply(next));
     await transition.ready;
@@ -82,7 +96,7 @@ export class ThemeService {
     // easing 刻意用 linear：cubic-bezier(0.22,1,0.36,1) 是 ease-out 曲線，
     // 尾段速度趨近於零，圓形擴散到接近全螢幕時會明顯「拖」一下才收尾。
     // 等速擴散反而俐落，而且更像水波推過畫面。
-    document.documentElement.animate(
+    const animation = document.documentElement.animate(
       {
         clipPath: [
           `circle(0px at ${x}px ${y}px)`,
@@ -90,10 +104,16 @@ export class ThemeService {
         ],
       },
       {
-        duration: 520,
+        duration: 420,
         easing: 'linear',
         pseudoElement: '::view-transition-new(root)',
       },
     );
+
+    try {
+      await animation.finished;
+    } finally {
+      document.documentElement.classList.remove('theme-switching');
+    }
   }
 }

@@ -11,8 +11,8 @@
         @for (opt of (q.optionStats | keyvalue); track opt.key) {
         <tr class="border-b">
           <td class="p-2">{{ opt.value.optionText }}</td>
-          <td class="p-2 text-right">{{ opt.value.count }}</td>
-          <td class="p-2 text-right text-accent">{{ opt.value.percentage }}%</td>
+          <td class="p-2 text-right tabular-nums" [appCountUp]="opt.value.count"></td>
+          <td class="p-2 text-right text-accent tabular-nums" [appCountUp]="opt.value.percentage" countUpSuffix="%"></td>
         </tr>
         }
       </table>

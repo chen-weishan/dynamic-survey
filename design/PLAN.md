@@ -187,6 +187,36 @@ Google CDN 那份 CSS 有附 `.material-icons` 的 ligature 設定，`@fontsourc
 合計約 9.5h vs 可用 7h。**每一步做完就 commit，做到哪算哪。**
 最可能被犧牲的是第 8、9 項的一部分；**第 10 項必須留住**。
 
+### 執行狀態（2026-08-11 17:20）
+
+工項 1–9 **全部完成**，實際耗時約 2h50m（原估 8.5h）。
+決策在 grilling 階段已全部釘死，執行階段沒有一次卡在「這裡要怎麼決定」。
+
+**剩下只有工項 10：在 LG Gram 上實測 production build。這項只有 Vincent 能做。**
+
+驗證分工（Claude 的 Browser pane 是隱藏狀態，隱藏頁面不 compositing frames，
+因此無法截圖、無法量 FPS、無法測滾動與互動，只剩 computed style 一種手段）：
+
+- Claude：computed style、CSS 優先權診斷、編譯錯誤、DOM 結構
+- Vincent：真實瀏覽器截圖 → Claude 依截圖診斷並修
+
+實測這個分工比 Claude 自己截圖更有效（真實 DPR、有登入狀態、有真實資料，
+且美感判斷本來就無法交給 Claude）。
+
+### demo 前的檢查清單
+
+- [ ] `localStorage.removeItem('dynamic-survey-theme')` —— 確保開場是淺色
+- [ ] 用 production build，不是 dev server
+- [ ] 在 LG Gram 上實跑一遍完整 demo 路徑
+- [ ] 確認 DevTools Network 沒有任何外部請求（字體與圖示應全部本地）
+
+### 已知未解問題
+
+- 深淺色切換的圓形揭露曾出現「擴散到接近底部就突然結束、剩餘區域瞬間跳色」。
+  已用 `max(innerHeight, documentElement.scrollHeight)` 計算半徑並乘 1.12 安全邊際緩解。
+  **根因未完全確認**（推測是可滾動頁面的 root 快照高度大於 viewport），
+  若仍復發，直接把安全係數再加大即可。
+
 ## 分支策略
 
 - `main` 保持在 2026-08-11 的可運作狀態，作為 demo 前的保命符（`git checkout main` 即可回退）
