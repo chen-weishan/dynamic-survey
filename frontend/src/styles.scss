@@ -40,7 +40,26 @@ body {
   font-family: Inter, "Noto Sans TC", sans-serif;
   background-color: var(--bg-beige);
   color: var(--text-primary);
-  transition: background-color 400ms ease, color 400ms ease;
+  /* 刻意不加 background-color 的 transition：::view-transition-new(root) 是 live 內容，
+     CSS transition 會和圓形揭露的 clip-path 動畫同時跑、互相打架。
+     切換的視覺完全交給 ThemeService 的 View Transition 負責。 */
+}
+
+/* 深淺色切換的圓形揭露。
+   關掉 View Transitions 預設的 cross-fade，改由 ThemeService 用 clip-path 動畫
+   讓新配色從觸發按鈕的位置擴散開來；舊畫面壓在下層當底。 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
 }
 
 /* @fontsource 的 material-icons 只提供 @font-face，不像 Google CDN 那份有附 ligature class。

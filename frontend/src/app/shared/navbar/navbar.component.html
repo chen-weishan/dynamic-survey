@@ -4,6 +4,7 @@
     <span class="text-xl font-bold">動態問卷系統</span>
   </div>
   <div class="flex items-center gap-4">
+    <app-theme-toggle />
     <button mat-button routerLink="/surveys">問卷查詢</button>
     @if (authService.currentUser()) {
       <span>歡迎, {{ authService.currentUser()?.name }}</span>
