@@ -1,11 +1,15 @@
 @use '@angular/material' as mat;
 
+@tailwind base;
+
 html {
-  @include mat.theme((color: (theme-type: light,
-        primary: mat.$cyan-palette,
-        tertiary: mat.$orange-palette,
+  @include mat.theme((color: (theme-type: color-scheme,
+        primary: mat.$violet-palette,
+        tertiary: mat.$rose-palette,
       ),
-      typography: Roboto,
+      typography: (plain-family: (Inter, 'Noto Sans TC', sans-serif),
+        brand-family: (Inter, 'Noto Sans TC', sans-serif),
+      ),
       density: 0,
     ));
 }
@@ -15,21 +19,110 @@ body {
   height: 100%;
 }
 
-body {
+/* 深淺色的唯一開關：html 上的 .dark class。
+   同時驅動三套系統 —— Material 的 light-dark()（靠 color-scheme）、
+   Tailwind 的 dark: 前綴（darkMode: 'class'）、以及下方自訂的 glass token。
+   原本這裡是 `body { color-scheme: light; ... !important }` 硬鎖亮色，已移除。 */
+html {
   color-scheme: light;
-  /* 強制亮色，避免系統深色模式造成文字反白 */
-  background-color: var(--bg-beige) !important;
-  color: #333333 !important;
 
-  /* 以下為 scaffold 原有設定，保留 */
-  margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  /* 投影機優先：demo 距離遠、投影會模糊，全站 rem 基準放大 12.5%（16px → 18px）。
+     改回螢幕版時把這行拿掉即可。 */
+  font-size: 18px;
 }
 
-/* 以下為新增：自訂色票變數，供全站頁面用 var(--primary-color) 取用 */
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, "Noto Sans TC", sans-serif;
+  background-color: var(--bg-beige);
+  color: var(--text-primary);
+  transition: background-color 400ms ease, color 400ms ease;
+}
+
+/* @fontsource 的 material-icons 只提供 @font-face，不像 Google CDN 那份有附 ligature class。
+   本專案所有 mat-icon 都是 ligature 模式（<mat-icon>menu</mat-icon>），
+   少了這組設定圖示會直接顯示成 "menu" 這類英文字、版面全爆。
+   .mat-ligature-font 是 Angular Material 給 MatIcon 的預設 font set class。 */
+.material-icons,
+.mat-ligature-font {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 數字對齊：統計頁的數值用等寬數字才不會跳動 */
+.tabular-nums,
+.mat-mdc-table {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 全站色票與 glass token。
+   --primary-color 與 --bg-beige 是既有 12 個頁面已在用的變數名，
+   刻意保留名稱（--bg-beige 現在已不是米色，但改名要動 12 頁 template，不值得），
+   只換值 —— 因此在 .dark 下覆寫這兩個變數，既有頁面就自動支援深色模式。
+
+   所有數值走「投影機優先」：飽和度、邊框 opacity、高光都比螢幕上好看的值再高一階，
+   因為投影機會吃掉飽和度、且低對比細節在投影上會整片消失。
+   要改回細緻的螢幕版時，主要就是把 border/highlight 的 opacity 調低、blur 調大。 */
 html {
-  --primary-color: #8D6E63;
-  --bg-beige: #F5F1EE;
+  --primary-color: #5B3FD9;
+  --bg-beige: #F2F0FC;
+  --text-primary: #1A1533;
+  --text-muted-c: #5A5480;
+
+  /* Level 1 玻璃表面 */
+  --glass-bg: rgba(255, 255, 255, 0.62);
+  --glass-bg-strong: rgba(255, 255, 255, 0.80);
+  --glass-border: rgba(255, 255, 255, 0.95);
+  --glass-border-shade: rgba(91, 63, 217, 0.22);
+  --glass-highlight: rgba(255, 255, 255, 0.98);
+  --glass-shadow: 0 10px 40px -8px rgba(49, 34, 140, 0.30);
+  --glass-glow: rgba(139, 92, 246, 0.40);
+  --glass-blur: 20px;
+  --glass-saturate: 175%;
+
+  /* 動畫漸層背景的色塊 */
+  --grad-1: #8B5CF6;
+  --grad-2: #38BDF8;
+  --grad-3: #FB7185;
+  --grad-opacity: 0.55;
+}
+
+html.dark {
+  --primary-color: #A78BFA;
+  --bg-beige: #0D0A1F;
+  --text-primary: #EDE9FE;
+  --text-muted-c: #A5A0C7;
+
+  /* 深色模式的光暈刻意開得比「正常」更強：投影機會把亮部吃掉一截 */
+  --glass-bg: rgba(45, 35, 95, 0.55);
+  --glass-bg-strong: rgba(45, 35, 95, 0.78);
+  --glass-border: rgba(167, 139, 250, 0.60);
+  --glass-border-shade: rgba(0, 0, 0, 0.45);
+  --glass-highlight: rgba(196, 181, 253, 0.65);
+  --glass-shadow: 0 10px 44px -6px rgba(0, 0, 0, 0.65);
+  --glass-glow: rgba(167, 139, 250, 0.55);
+  --glass-blur: 22px;
+  --glass-saturate: 160%;
+
+  --grad-1: #7C3AED;
+  --grad-2: #0EA5E9;
+  --grad-3: #E11D48;
+  --grad-opacity: 0.75;
 }
 
 /* 修正 Angular Material 表單外框的細節 */
@@ -357,12 +450,13 @@ html {
   color: #616161;
 }
 
-html,
-body {
-  height: 100%;
-}
+/* 註：檔案尾端原本重複貼了一份 `html,body { height:100% }` 與
+   `body { margin:0; font-family:Roboto }`（與第 15–29 行重複），
+   後者會覆蓋掉上方的字體設定，已移除。 */
 
-body {
-  margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
-}
+/* Tailwind utilities 放在最後，撞號時由 Tailwind 勝出。
+   已比對上方手寫 utility 的數值（gap/padding/字級/圓角）與 Tailwind v3 完全一致，
+   因此覆蓋不會造成任何版面位移；而 `.flex-grow`、`.card-grid`、`.badge` 等
+   Tailwind 沒有的自訂語意 class 仍由上方定義提供。 */
+@tailwind components;
+@tailwind utilities;

@@ -79,6 +79,50 @@
 | 16 | 明天用 **production build**，非 dev server | dev server 無最佳化、帶 sourcemap，在 LG Gram 上明顯更慢。**測 dev server 等於沒測** |
 | 17 | 階段式推進，**每階段結束都是可 demo 的完整狀態** | 降級結果是「全站好看 + 前面幾個畫面驚人」，而非「三個好看 + 兩個舊 Material」。風格斷裂比平庸更傷 |
 
+## 執行中的發現與計畫修正
+
+### 修正 1：手寫 utility class 不刪（原計畫寫「全刪讓 Tailwind 接手」）
+
+`styles.scss` 共 397 行，82–387 行那套手寫 utility **混了兩類東西**：
+
+- 與 Tailwind 撞號的（`.flex`、`.gap-*`、`.p-*`、`.text-*`、`.rounded*`…）
+- Tailwind **沒有**的專案自訂語意 class（`.card-grid`、`.badge`、`.badge-success`、
+  `.text-danger`、`.text-muted`、`.min-h-form`、`.border-accent-l`、`.bg-accent-tint`…）
+
+全刪會讓 12 頁破版。且 `.flex-grow` 在 Tailwind v3 裡叫 `grow`（無 `flex-grow`），保留是必要的。
+
+**已逐項比對撞號 class 的數值，與 Tailwind v3 完全一致**（gap 0.25/0.5/0.75/1/1.25/1.5/2rem、
+padding 同、字級 .875/1.125/1.25/1.5rem、圓角 4/8/12px = 0.25/0.5/0.75rem）——
+原作者是照 Tailwind 數值手抄的。因此：
+
+> **保留整段不動，`@tailwind utilities` 放在檔案最後讓 Tailwind 勝出。數值相同 → 零版面位移風險。**
+
+已驗證：產出的 `styles.css` 裡 `.flex` 出現兩次且內容完全相同。
+
+### 修正 2：`theme-type: color-scheme` 可用，不需要產生兩套 token
+
+Angular Material 19.2 的 `mat.theme()` 接受 `theme-type: color-scheme`，
+產出 `--mat-sys-primary: light-dark(#7d00fa, #d5baff)` 這種形式，
+靠 `html` 的 `color-scheme` property 自動切換 → CSS 體積只需一套。已驗證生效。
+
+### 修正 3：字體設定被檔案尾端的重複定義覆蓋
+
+`styles.scss` 尾端（原 389–397 行）重複貼了一份 `html,body { height:100% }` 與
+`body { margin:0; font-family:Roboto }`，與檔案開頭的定義重複且在後面勝出，
+所以第一次改字體時 `body` 的 computed font 仍是 Roboto。已移除尾段那份。
+
+### 修正 4：`@fontsource/material-icons` 不含 ligature class
+
+Google CDN 那份 CSS 有附 `.material-icons` 的 ligature 設定，`@fontsource` 版**只有 `@font-face`**。
+本專案所有 icon 都是 ligature 模式（`<mat-icon>menu</mat-icon>`，已確認無 `svgIcon` 用法），
+少了那組設定圖示會全部顯示成英文字。已在 `styles.scss` 補上 `.material-icons, .mat-ligature-font`。
+
+### 高槓桿發現：既有頁面自動支援深色模式
+
+12 個既有頁面全都透過 `var(--primary-color)` 與 `var(--bg-beige)` 取色。
+因此**只要在 `html.dark` 下覆寫這兩個變數，12 頁就自動支援深色模式**，不需改任何 template。
+`--bg-beige` 的名稱現在語意已錯（不再是米色），但改名要動 12 頁，不值得——刻意保留名稱只換值。
+
 ## Level 1 玻璃化的套用範圍
 
 5 個 demo 畫面全部套用。填答頁採層次策略：
