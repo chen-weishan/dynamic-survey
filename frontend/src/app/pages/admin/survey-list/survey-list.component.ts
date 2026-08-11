@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, formatDate } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { SurveyService } from '../../../services/survey.service';
 import {
@@ -29,6 +30,7 @@ import {
     MatFormFieldModule,
     MatInputModule,
     MatPaginatorModule,
+    MatDatepickerModule,
     MatSnackBarModule,
   ],
   templateUrl: './survey-list.component.html',
@@ -43,8 +45,9 @@ export class SurveyListComponent implements OnInit {
   displayedColumns = ['id', 'title', 'status', 'period', 'actions'];
   // 搜尋欄位 (雙向綁定用一般屬性，不是 signal)
   titleFilter = '';
-  startDateFilter = '';
-  endDateFilter = '';
+  /** matDatepicker 綁的是 Date 物件；送給後端前才轉成 yyyy-MM-dd */
+  startDate: Date | null = null;
+  endDate: Date | null = null;
 
   ngOnInit() {
     this.loadSurveys();
@@ -57,9 +60,18 @@ export class SurveyListComponent implements OnInit {
     const start = this.pageIndex() * this.pageSize();
     return this.surveys().slice(start, start + this.pageSize());
   });
+  /** 空值要送空字串（後端把它當「不過濾」），不能送 'null' */
+  private asApiDate(d: Date | null): string {
+    return d ? formatDate(d, 'yyyy-MM-dd', 'en-US') : '';
+  }
+
   loadSurveys() {
     this.surveyService
-      .getAllSurveys(this.titleFilter, this.startDateFilter, this.endDateFilter)
+      .getAllSurveys(
+        this.titleFilter,
+        this.asApiDate(this.startDate),
+        this.asApiDate(this.endDate),
+      )
       .subscribe({
         next: (data) => {
           this.surveys.set(data);

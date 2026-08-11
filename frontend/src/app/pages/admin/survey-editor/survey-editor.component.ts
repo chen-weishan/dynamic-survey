@@ -12,7 +12,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { SurveyService } from '../../../services/survey.service';
@@ -26,7 +25,6 @@ import { Survey } from '../../../models/survey.model';
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    MatCheckboxModule,
     MatDatepickerModule,
     MatSnackBarModule,
   ],
@@ -107,6 +105,13 @@ export class SurveyEditorComponent implements OnInit {
   setType(qi: number, type: string) {
     this.questionsArray.at(qi).get('type')?.setValue(type);
     this.onTypeChange(qi);
+  }
+
+  /** 必填開關取代了 mat-checkbox，同樣要自己寫回 FormControl */
+  toggleRequired(qi: number) {
+    const ctrl = this.questionsArray.at(qi).get('required');
+    ctrl?.setValue(!ctrl.value);
+    ctrl?.markAsDirty();
   }
 
   // 切換為文字題時清空選項；切回選擇題時補回選項

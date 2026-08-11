@@ -3,9 +3,40 @@
    幅度大會出現「內容在底圖上滑動」的違和感。 */
 .survey-card {
   cursor: pointer;
+  overflow: hidden;
+  /* 自成一個堆疊脈絡，::after 的 z-index 才不會跟頁面其他東西比高低 */
+  isolation: isolate;
   transition:
     transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* hover 底色：一層由左往右揭開的玻璃。
+
+     用 clip-path 而不是 transform: scaleX —— scaleX 會把漸層一起橫向壓扁，
+     看起來像「底色被拉長」而不是「刷過去」。
+     ::before 已經被 .mat-mdc-card 的漸層光邊佔走，所以這裡用 ::after。 */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    background: var(--card-sweep);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    box-shadow: inset 0 1px 0 0 var(--glass-highlight);
+    clip-path: inset(0 100% 0 0);
+    transition: clip-path 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+  }
+
+  /* 內容要壓在那層底色之上，否則會被整片蓋掉 */
+  mat-card-header,
+  mat-card-content,
+  .survey-card__hint {
+    position: relative;
+    z-index: 1;
+  }
 
   &:hover,
   &:focus-visible {
@@ -15,25 +46,45 @@
       inset 0 1px 0 0 var(--glass-highlight);
   }
 
+  &:hover::after,
+  &:focus-visible::after {
+    clip-path: inset(0 0 0 0);
+  }
+
   &:focus-visible {
     outline: 2px solid var(--primary-color);
     outline-offset: 3px;
   }
 }
 
-/* 取代原本的 CTA 按鈕。平時只是一行淡字，hover 時亮起並整組往右移，
-   把「可以點進去」的訊息交給整張卡而不是一顆小按鈕。 */
+/* 底色刷過去之後原本的深紫字會被吃掉，文字色要一起換。
+   跟著 clip-path 同步過渡，不會出現「底色已變、字還是舊色」的半秒。 */
+.survey-card .mat-mdc-card-title,
+.survey-card .mat-mdc-card-subtitle,
+.survey-card .text-muted,
+.survey-card .survey-card__hint {
+  transition: color 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.survey-card:hover,
+.survey-card:focus-visible {
+  .mat-mdc-card-title,
+  .survey-card__hint {
+    color: var(--card-sweep-ink);
+  }
+
+  .mat-mdc-card-subtitle,
+  .text-muted {
+    color: var(--card-sweep-ink-muted);
+  }
+}
+
+/* 只是一行說明字，hover 的表現交給整張卡的底色 */
 .survey-card__hint {
   padding: 0 1rem 1rem;
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-muted-c);
-  opacity: 0.65;
-  transform: translateX(0);
-  transition:
-    opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-    color 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 
   mat-icon {
     font-size: 1.15rem;
@@ -42,17 +93,14 @@
   }
 }
 
-.survey-card:hover .survey-card__hint,
-.survey-card:focus-visible .survey-card__hint {
-  opacity: 1;
-  color: var(--amber);
-  transform: translateX(0.35rem);
-}
-
 @media (prefers-reduced-motion: reduce) {
 
   .survey-card,
-  .survey-card__hint {
+  .survey-card::after,
+  .survey-card .mat-mdc-card-title,
+  .survey-card .mat-mdc-card-subtitle,
+  .survey-card .text-muted,
+  .survey-card .survey-card__hint {
     transition: none;
   }
 }

@@ -99,10 +99,78 @@
   color: var(--text-primary);
 }
 
+/* ===== 必填開關 =====
+
+   取代 mat-checkbox。方塊打勾是「狀態」，滑塊移動是「動作」——
+   這裡切的是一個開關，用後者比較貼近語意。
+   軌道 50px、滑塊 22px、內距 3px，位移剛好 50 - 22 - 3*2 = 22px。 */
+.switch-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.switch {
+  position: relative;
+  flex: 0 0 auto;
+  width: 50px;
+  height: 28px;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--glass-border-shade);
+  border: 1.5px solid var(--glass-border);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18);
+  transition: background 0.3s;
+}
+
+.switch-knob {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--glass-highlight);
+  box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.35);
+  /* 帶回彈的曲線：滑塊到位時會微微過衝再收回 */
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 0.3s;
+}
+
+.switch.on {
+  background: var(--btn-glass-bg);
+  border-color: var(--btn-glass-border);
+}
+
+.switch.on .switch-knob {
+  transform: translateX(22px);
+  background: #ffffff;
+}
+
+.switch-field:focus-visible {
+  outline: none;
+
+  .switch {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 3px;
+  }
+}
+
+.switch-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
 @media (prefers-reduced-motion: reduce) {
 
   .rail::after,
-  .rail__btn {
+  .rail__btn,
+  .switch,
+  .switch-knob {
     transition: none;
   }
 }

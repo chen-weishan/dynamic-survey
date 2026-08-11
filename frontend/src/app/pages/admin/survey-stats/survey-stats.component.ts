@@ -40,7 +40,6 @@ const KINDS_BY_TYPE: Record<QuestionStats['type'], KindOption[]> = {
     { kind: 'doughnut', label: '甜甜圈', icon: 'donut_large' },
     { kind: 'pie', label: '圓餅圖', icon: 'pie_chart' },
     { kind: 'bar', label: '長條圖', icon: 'bar_chart' },
-    { kind: 'polarArea', label: '極座標', icon: 'radar' },
   ],
   MULTI: [
     { kind: 'hbar', label: '橫向長條', icon: 'align_horizontal_left' },
@@ -111,11 +110,31 @@ export class SurveyStatsComponent implements OnInit {
    */
   private kindOverrides = signal<ReadonlyMap<number, ChartKind>>(new Map());
 
+  /**
+   * 每題的圖表物件快取。
+   *
+   * 只有「這一題的呈現方式」或「主題深淺」變了才重建，其餘題目沿用同一個物件參照。
+   * 少了這層，切換某一題的圖表會讓 computed 重跑、每題都拿到新物件，
+   * ng2-charts 看到 data input 換參照就整張重畫 —— 症狀是動到一題、全頁重跑進場動畫。
+   */
+  private chartCache = new Map<
+    number,
+    {
+      kind: ChartKind;
+      dark: boolean;
+      data: ChartData;
+      options: ChartConfiguration['options'];
+    }
+  >();
+
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id)
       this.surveyService.getSurveyStats(Number(id)).subscribe({
-        next: (data) => this.stats.set(data),
+        next: (data) => {
+          this.chartCache.clear();
+          this.stats.set(data);
+        },
         error: (err) => console.error('無法載入統計數據', err),
       });
   }
@@ -167,7 +186,7 @@ export class SurveyStatsComponent implements OnInit {
     const map = new Map<number, ChartData>();
     for (const q of this.stats()?.questionStats ?? []) {
       if (q.type === 'TEXT') continue;
-      map.set(q.questionId, this.buildChartData(q, this.kindOf(q)));
+      map.set(q.questionId, this.entryFor(q).data);
     }
     return map;
   });
@@ -176,10 +195,27 @@ export class SurveyStatsComponent implements OnInit {
     const map = new Map<number, ChartConfiguration['options']>();
     for (const q of this.stats()?.questionStats ?? []) {
       if (q.type === 'TEXT') continue;
-      map.set(q.questionId, this.buildChartOptions(this.kindOf(q)));
+      map.set(q.questionId, this.entryFor(q).options);
     }
     return map;
   });
+
+  /** 命中快取就原封不動回傳，參照沒變 ng2-charts 就不會重畫那張圖 */
+  private entryFor(q: QuestionStats) {
+    const kind = this.kindOf(q);
+    const dark = this.theme.isDark();
+    const hit = this.chartCache.get(q.questionId);
+    if (hit && hit.kind === kind && hit.dark === dark) return hit;
+
+    const entry = {
+      kind,
+      dark,
+      data: this.buildChartData(q, kind),
+      options: this.buildChartOptions(kind),
+    };
+    this.chartCache.set(q.questionId, entry);
+    return entry;
+  }
 
   // 把後端統計 Map 轉成 Chart.js 資料
   private buildChartData(q: QuestionStats, kind: ChartKind): ChartData {

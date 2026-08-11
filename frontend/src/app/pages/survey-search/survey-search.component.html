@@ -1,21 +1,19 @@
 <div class="p-6 max-w-5xl mx-auto">
   <h1 class="text-2xl font-bold text-gray-800 mb-6">問卷查詢</h1>
+  <!-- filter-bar：四個欄位（含按鈕）用 align-items:center 對齊，
+       mat-form-field 的 subscript 高度在全域樣式裡收掉，否則按鈕會偏上。 -->
   <div
-    class="flex flex-wrap items-center gap-4 mb-4 bg-white p-4 rounded-lg shadow"
+    class="filter-bar flex flex-wrap items-center gap-4 mb-4 bg-white p-4 rounded-lg shadow"
   >
-    <!-- 問卷名稱：收合成放大鏡，hover / focus 才展開。
-         用 <label> 包住，點外框任一處都會 focus 到裡面的 input。 -->
-    <label class="search glass-strong">
-      <mat-icon class="search__icon">search</mat-icon>
+    <mat-form-field appearance="outline" class="flex-1 min-w-[200px]">
+      <mat-label>問卷名稱</mat-label>
       <input
-        class="search__input"
-        type="text"
+        matInput
         [(ngModel)]="titleFilter"
-        placeholder="問卷名稱（模糊搜尋）"
-        aria-label="問卷名稱"
+        placeholder="模糊搜尋"
         (keyup.enter)="onSearch()"
       />
-    </label>
+    </mat-form-field>
 
     <!-- 日期改用 matDatepicker：和問卷編輯器 STEP 0 同一種選單，
          原本的 <input type="date"> 是瀏覽器原生 UI，套不上玻璃樣式。 -->

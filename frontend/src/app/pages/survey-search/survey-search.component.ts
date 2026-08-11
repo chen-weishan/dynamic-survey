@@ -9,7 +9,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatIconModule } from '@angular/material/icon';
 import { SurveyService } from '../../services/survey.service';
 import { Survey, TimeStatus, getTimeStatus } from '../../models/survey.model';
 @Component({
@@ -25,7 +24,6 @@ import { Survey, TimeStatus, getTimeStatus } from '../../models/survey.model';
     MatInputModule,
     MatPaginatorModule,
     MatDatepickerModule,
-    MatIconModule,
   ],
   templateUrl: './survey-search.component.html',
   styleUrl: './survey-search.component.scss',

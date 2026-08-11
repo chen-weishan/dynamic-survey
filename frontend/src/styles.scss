@@ -144,6 +144,14 @@ html {
      在整站都是紫的畫面裡是唯一不會被吃掉的高亮色。 */
   --amber: #B45309;
 
+  /* 首頁問卷卡 hover 時由左往右刷過去的底色（仍是玻璃：半透明 + backdrop blur）。
+     ink 是刷過之後的文字色 —— 底色一變深，原本的深紫字就會被吃掉。 */
+  --card-sweep: linear-gradient(100deg,
+      rgba(124, 92, 255, 0.88) 0%,
+      rgba(91, 63, 217, 0.80) 100%);
+  --card-sweep-ink: #FFFFFF;
+  --card-sweep-ink-muted: rgba(255, 255, 255, 0.86);
+
   /* navbar 的邊框單獨開 token：淺色模式維持 2px 有色邊（近白背景上細邊會消失），
      深色模式改細且深（見 html.dark 覆寫）。 */
   --navbar-border-width: 2px;
@@ -180,6 +188,13 @@ html.dark {
   --btn-glass-border: rgba(196, 181, 253, 0.60);
 
   --amber: #FBBF24;
+
+  /* 深色模式底本來就暗，刷過去的那層可以更透（越透玻璃感越明顯） */
+  --card-sweep: linear-gradient(100deg,
+      rgba(139, 92, 246, 0.52) 0%,
+      rgba(76, 29, 149, 0.62) 100%);
+  --card-sweep-ink: #F5F3FF;
+  --card-sweep-ink-muted: rgba(245, 243, 255, 0.84);
 
   /* 深色模式的 navbar 邊框：亮紫 2px 在暗底上是一條發光的粗線、太搶戲。
      改成 1px 且壓深，只剩「有個邊界」的暗示。 */
@@ -309,46 +324,6 @@ html.dark {
   }
 }
 
-/* .search —— 收合成一顆圓形放大鏡，hover / focus 時往右展開成輸入框。
-   用 <label> 當外框，點外框任一處都會 focus 內部 input。 */
-.search {
-  display: flex;
-  align-items: center;
-  width: 3.1rem;
-  height: 3.1rem;
-  padding: 0 0.9rem;
-  border-radius: 999px;
-  overflow: hidden;
-  cursor: text;
-  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-
-  &:hover,
-  &:focus-within {
-    width: 14.5rem;
-  }
-
-  .search__icon {
-    flex: 0 0 auto;
-    color: var(--primary-color);
-  }
-
-  .search__input {
-    flex: 1 1 auto;
-    min-width: 0;
-    margin-left: 0.6rem;
-    border: none;
-    outline: none;
-    background: transparent;
-    font: inherit;
-    font-size: 0.95rem;
-    color: var(--text-primary);
-
-    &::placeholder {
-      color: var(--text-muted-c);
-    }
-  }
-}
-
 /* .wipe / .over —— 兩層文字疊在一起，上層用 clip-path 由左往右揭開。
    .over 必須和底層完全等寬等位，所以兩層都放在同一個 grid 格。 */
 .wipe {
@@ -376,8 +351,7 @@ html.dark {
 @media (prefers-reduced-motion: reduce) {
 
   .word,
-  .over,
-  .search {
+  .over {
     transition: none;
   }
 }
@@ -468,6 +442,21 @@ html.dark {
   .mat-mdc-text-field-wrapper {
     background: var(--glass-bg-strong);
     border-radius: 0.9rem;
+  }
+}
+
+/* 查詢列（問卷查詢 / 問卷管理）：模糊查詢、起訖日期、搜尋按鈕上下置中。
+
+   mat-form-field 預設在下方保留一塊 subscript（放 hint / error）的高度，
+   欄位的視覺中線因此比按鈕高一截 —— 這一列不需要 hint，直接收掉，
+   容器的 align-items: center 才會真的把四個元件對齊。 */
+.filter-bar {
+  .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
+
+  .mat-mdc-form-field {
+    margin-bottom: 0;
   }
 }
 

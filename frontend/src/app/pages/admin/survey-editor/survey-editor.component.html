@@ -82,7 +82,21 @@
         }
       </div>
 
-      <mat-checkbox formControlName="required" class="ml-4">必填</mat-checkbox>
+      <!-- 必填：自製開關。mat-checkbox 是「有沒有打勾」的靜態方塊，
+           這裡要的是滑塊帶回彈的切換手感，所以自己畫。
+           整顆是 role="switch" 的 button，鍵盤 Enter / Space 原生就能切。 -->
+      <button
+        type="button"
+        class="switch-field ml-4"
+        role="switch"
+        [attr.aria-checked]="q.get('required')?.value"
+        (click)="toggleRequired(i)"
+      >
+        <span class="switch" [class.on]="q.get('required')?.value">
+          <span class="switch-knob"></span>
+        </span>
+        <span class="switch-text">必填</span>
+      </button>
 
       <!-- 選項區域 (只有非純文字題時顯示) -->
       @if (q.get("type")?.value !== "TEXT") {

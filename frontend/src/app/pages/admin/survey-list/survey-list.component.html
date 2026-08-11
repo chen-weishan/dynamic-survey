@@ -5,22 +5,34 @@
       <mat-icon>add</mat-icon> 建立新問卷
     </button>
   </div>
+  <!-- filter-bar：四個元件上下置中（subscript 高度在全域樣式收掉）。
+       日期用 matDatepicker，原本的 <input type="date"> 是瀏覽器原生 UI，
+       套不上玻璃樣式，展開的月曆也是舊版外觀。 -->
   <div
-    class="flex flex-wrap items-end gap-4 mb-4 bg-white p-4 rounded-lg shadow"
+    class="filter-bar flex flex-wrap items-center gap-4 mb-4 bg-white p-4 rounded-lg shadow"
   >
     <mat-form-field appearance="outline" class="flex-1 min-w-[200px]">
       <mat-label>問卷名稱</mat-label>
-      <input matInput [(ngModel)]="titleFilter" placeholder="模糊搜尋" />
+      <input
+        matInput
+        [(ngModel)]="titleFilter"
+        placeholder="模糊搜尋"
+        (keyup.enter)="onSearch()"
+      />
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label>開始日期</mat-label>
-      <input matInput type="date" [(ngModel)]="startDateFilter" />
+      <input matInput [matDatepicker]="startPicker" [(ngModel)]="startDate" />
+      <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+      <mat-datepicker #startPicker></mat-datepicker>
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label>結束日期</mat-label>
-      <input matInput type="date" [(ngModel)]="endDateFilter" />
+      <input matInput [matDatepicker]="endPicker" [(ngModel)]="endDate" />
+      <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+      <mat-datepicker #endPicker></mat-datepicker>
     </mat-form-field>
-    <button mat-raised-button color="primary" (click)="onSearch()" class="mb-5">
+    <button mat-raised-button color="primary" (click)="onSearch()">
       搜尋
     </button>
   </div>
