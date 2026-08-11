@@ -1,29 +1,69 @@
-@for (q of stats()?.questionStats; track q.questionId) {
-<mat-card>
-  <mat-card-title>{{ $index + 1 }}. {{ q.questionTitle }}</mat-card-title>
-  <mat-card-content class="p-6">
-    @if (q.type !== 'TEXT') {
-    <div class="flex flex-col gap-8">
-      <div class="w-full" style="max-width: 300px;">
-        <canvas baseChart [data]="chartDataById().get(q.questionId)!" [options]="pieChartOptions()"
-          [type]="'pie'"></canvas>
-      </div>
-      <table class="w-full text-sm">
-        @for (opt of (q.optionStats | keyvalue); track opt.key) {
-        <tr class="border-b">
-          <td class="p-2">{{ opt.value.optionText }}</td>
-          <td class="p-2 text-right tabular-nums" [appCountUp]="opt.value.count"></td>
-          <td class="p-2 text-right text-accent tabular-nums" [appCountUp]="opt.value.percentage" countUpSuffix="%"></td>
-        </tr>
+@if (stats(); as s) {
+<div class="stats-page flex flex-col gap-6">
+  <header class="stats-head">
+    <h1 class="text-2xl font-bold">{{ s.surveyTitle }}</h1>
+    <p class="text-muted">共 {{ s.totalResponses }} 份回覆</p>
+  </header>
+
+  @for (q of s.questionStats; track q.questionId) {
+  <mat-card class="stat-card">
+    <div class="stat-card__head">
+      <h2 class="stat-card__title">{{ $index + 1 }}. {{ q.questionTitle }}</h2>
+
+      <!-- 呈現方式切換：每題各自記住自己的選擇（見 kindOverrides）。
+           選項依題型不同 —— 文字題沒有圖表可畫，給的是版面切換。 -->
+      <div class="kind-switch" role="group" aria-label="呈現方式">
+        @for (k of kindsFor(q); track k.kind) {
+        <button type="button" class="kind-switch__btn" [class.is-active]="kindOf(q) === k.kind"
+          [attr.aria-pressed]="kindOf(q) === k.kind" [title]="k.label" (click)="setKind(q, k.kind)">
+          <mat-icon>{{ k.icon }}</mat-icon>
+          <span class="kind-switch__label">{{ k.label }}</span>
+        </button>
         }
-      </table>
-      @for (ans of q.textAnswers; track $index) {
-      <div class="bg-white p-3 rounded shadow-sm mb-2 border-accent-l">
-        {{ ans }}
+      </div>
+    </div>
+
+    @if (q.type !== 'TEXT') {
+    <div class="stat-card__body">
+      <!-- 高度由容器決定、maintainAspectRatio: false，
+           選項再多也不會把 canvas 撐出卡片外 -->
+      <div class="chart-box">
+        <canvas baseChart [data]="chartDataById().get(q.questionId)!"
+          [options]="chartOptionsById().get(q.questionId)!" [type]="chartTypeOf(q)"></canvas>
+      </div>
+
+      <ul class="tally">
+        @for (opt of optionList(q); track $index) {
+        <li class="tally__row">
+          <span class="tally__dot" [style.background]="colorAt($index)"></span>
+          <span class="tally__label">{{ opt.optionText }}</span>
+          <span class="tally__count tabular-nums" [appCountUp]="opt.count"></span>
+          <span class="tally__pct tabular-nums" [appCountUp]="opt.percentage" countUpSuffix="%"></span>
+          <!-- 進度條讓「誰比較多」一眼可讀，不用去對數字 -->
+          <span class="tally__bar">
+            <span class="tally__bar-fill" [style.width.%]="opt.percentage" [style.background]="colorAt($index)"></span>
+          </span>
+        </li>
+        }
+      </ul>
+    </div>
+    }
+
+    <!-- 文字題原本整段被 `q.type !== 'TEXT'` 包住，所以永遠不顯示（卡片一片空白）。 -->
+    @else {
+    <div class="stat-card__body">
+      @if (!q.textAnswers?.length) {
+      <p class="text-muted">這一題還沒有任何回答。</p>
+      } @else {
+      <div [class.answers--list]="kindOf(q) === 'list'" [class.answers--cards]="kindOf(q) === 'cards'">
+        @for (ans of q.textAnswers; track $index) {
+        <div class="answer">{{ ans }}</div>
+        }
       </div>
       }
     </div>
     }
-  </mat-card-content>
-</mat-card>
+  </mat-card>
+  }
+</div>
 }

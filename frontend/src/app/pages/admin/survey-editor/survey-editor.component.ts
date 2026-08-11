@@ -12,7 +12,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -27,7 +26,6 @@ import { Survey } from '../../../models/survey.model';
     MatInputModule,
     MatButtonModule,
     MatIconModule,
-    MatButtonToggleModule,
     MatCheckboxModule,
     MatDatepickerModule,
     MatSnackBarModule,
@@ -96,6 +94,19 @@ export class SurveyEditorComponent implements OnInit {
   }
   removeOption(qi: number, oi: number) {
     this.getOptionsArray(qi).removeAt(oi);
+  }
+
+  /** rail 的滑塊位置：把題型換算成 0/1/2 餵給 CSS 的 --i */
+  typeIndex(qi: number): number {
+    const type = this.questionsArray.at(qi).get('type')?.value;
+    const idx = this.questionTypes.findIndex((t) => t.value === type);
+    return idx < 0 ? 0 : idx;
+  }
+
+  /** rail 的按鈕取代了 mat-button-toggle，要自己寫回 FormControl */
+  setType(qi: number, type: string) {
+    this.questionsArray.at(qi).get('type')?.setValue(type);
+    this.onTypeChange(qi);
   }
 
   // 切換為文字題時清空選項；切回選擇題時補回選項

@@ -32,11 +32,8 @@
               }
             ],
             "styles": [
-              "@fontsource/inter/500.css",
-              "@fontsource/inter/600.css",
-              "@fontsource/inter/700.css",
-              "@fontsource/noto-sans-tc/chinese-traditional-500.css",
-              "@fontsource/noto-sans-tc/chinese-traditional-700.css",
+              "@fontsource-variable/inter/index.css",
+              "@fontsource-variable/noto-sans-tc/index.css",
               "@fontsource/material-icons/index.css",
               "src/styles.scss"
             ],
@@ -97,11 +94,8 @@
               }
             ],
             "styles": [
-              "@fontsource/inter/500.css",
-              "@fontsource/inter/600.css",
-              "@fontsource/inter/700.css",
-              "@fontsource/noto-sans-tc/chinese-traditional-500.css",
-              "@fontsource/noto-sans-tc/chinese-traditional-700.css",
+              "@fontsource-variable/inter/index.css",
+              "@fontsource-variable/noto-sans-tc/index.css",
               "@fontsource/material-icons/index.css",
               "src/styles.scss"
             ],

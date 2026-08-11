@@ -69,13 +69,18 @@
         <mat-error>請填寫題目標題</mat-error>
       </mat-form-field>
 
-      <mat-button-toggle-group formControlName="type" (change)="onTypeChange(i)" class="mb-3">
+      <!-- 題型切換：滑動的玻璃選取塊（rail）。
+           --i 綁在選中的索引上，hover 時由 :has() 暫時把塊拉到游標下方，
+           滑鼠離開就彈回實際選取項 —— 所以「預覽」與「已選」用的是同一顆塊。 -->
+      <div class="rail glass mb-3" [class.rail--i0]="typeIndex(i) === 0" [class.rail--i1]="typeIndex(i) === 1"
+        [class.rail--i2]="typeIndex(i) === 2">
         @for (t of questionTypes; track t.value) {
-        <mat-button-toggle [value]="t.value">
+        <button type="button" class="rail__btn" [class.is-active]="q.get('type')?.value === t.value"
+          [attr.aria-pressed]="q.get('type')?.value === t.value" (click)="setType(i, t.value)">
           {{ t.label }}
-        </mat-button-toggle>
+        </button>
         }
-      </mat-button-toggle-group>
+      </div>
 
       <mat-checkbox formControlName="required" class="ml-4">必填</mat-checkbox>
 

@@ -1,0 +1,58 @@
+/* 整張卡片可點：游標、hover 浮起、focus 可見外框。
+   縮放刻意小（1.02）—— 卡片是玻璃的，放大時背景模糊層跟著位移，
+   幅度大會出現「內容在底圖上滑動」的違和感。 */
+.survey-card {
+  cursor: pointer;
+  transition:
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow:
+      0 22px 60px -14px var(--glass-glow),
+      inset 0 1px 0 0 var(--glass-highlight);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 3px;
+  }
+}
+
+/* 取代原本的 CTA 按鈕。平時只是一行淡字，hover 時亮起並整組往右移，
+   把「可以點進去」的訊息交給整張卡而不是一顆小按鈕。 */
+.survey-card__hint {
+  padding: 0 1rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted-c);
+  opacity: 0.65;
+  transform: translateX(0);
+  transition:
+    opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+
+  mat-icon {
+    font-size: 1.15rem;
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+}
+
+.survey-card:hover .survey-card__hint,
+.survey-card:focus-visible .survey-card__hint {
+  opacity: 1;
+  color: var(--amber);
+  transform: translateX(0.35rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .survey-card,
+  .survey-card__hint {
+    transition: none;
+  }
+}

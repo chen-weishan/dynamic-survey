@@ -1,11 +1,24 @@
 @if (surveys().length > 0) {
   <div class="card-grid">
     @for (survey of surveys(); track survey.id) {
-      <mat-card class="transition-shadow h-full flex flex-col">
+      <!-- 整張卡就是連結：原本只有右下角一顆「立即填寫」，
+           點擊區太小、而且卡片本身沒有任何互動暗示。 -->
+      <mat-card
+        class="survey-card wipe-host h-full flex flex-col"
+        tabindex="0"
+        role="link"
+        [routerLink]="['/fill', survey.id]"
+        (keyup.enter)="goToFill(survey.id!)"
+      >
         <mat-card-header>
-          <mat-card-title class="text-xl font-bold">{{
-            survey.title
-          }}</mat-card-title>
+          <mat-card-title class="text-xl font-bold">
+            <!-- 標題兩層疊在同一格：底層是一般色，上層是琥珀色，
+                 hover 時上層由左往右揭開，像一道刷過去的螢光筆。 -->
+            <span class="wipe">
+              <span>{{ survey.title }}</span>
+              <span class="over" aria-hidden="true">{{ survey.title }}</span>
+            </span>
+          </mat-card-title>
           <mat-card-subtitle>開放至 {{ survey.endDate }}</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content class="flex-grow pt-4">
@@ -13,23 +26,16 @@
             {{ survey.description || "本問卷尚無詳細說明。" }}
           </p>
         </mat-card-content>
-        <mat-card-actions class="p-4 flex justify-end">
-          <button
-            mat-raised-button
-            color="primary"
-            [routerLink]="['/fill', survey.id]"
-          >
-            立即填寫 <mat-icon>edit_note</mat-icon>
-          </button>
-        </mat-card-actions>
-
-        <!-- surveys() 為空時顯示 -->
-        @if (surveys().length === 0) {
-          <div class="bg-white p-12 rounded-xl shadow text-center">
-            <p class="text-xl text-muted">目前沒有進行中的問卷，請稍後再來。</p>
-          </div>
-        }
+        <!-- 取代按鈕的提示：平時淡、hover 時亮起並往右滑 -->
+        <div class="survey-card__hint flex items-center gap-2">
+          <span>立即填寫</span>
+          <mat-icon>arrow_forward</mat-icon>
+        </div>
       </mat-card>
     }
+  </div>
+} @else {
+  <div class="bg-white p-12 rounded-xl shadow text-center">
+    <p class="text-xl text-muted">目前沒有進行中的問卷，請稍後再來。</p>
   </div>
 }

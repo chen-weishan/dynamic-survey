@@ -10,7 +10,7 @@
   background: var(--glass-bg-strong);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  border-bottom: 2px solid var(--glass-border);
+  border-bottom: var(--navbar-border-width) solid var(--navbar-border-color);
   box-shadow: var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight);
   transform: translateY(0);
   transition:
@@ -28,7 +28,7 @@
      transform 不參與佈局、不會 collapse，而且是純合成操作、動畫更順。 */
   transform: translateY(1.4rem);
   border-radius: 1.75rem;
-  border: 2px solid var(--glass-border);
+  border: var(--navbar-border-width) solid var(--navbar-border-color);
 }
 
 .navbar__inner {
@@ -162,7 +162,7 @@
   background: var(--glass-bg-strong);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  border-top: 2px solid var(--glass-border);
+  border-top: var(--navbar-border-width) solid var(--navbar-border-color);
   opacity: 0;
   visibility: hidden;
   transform: scale(0.97);

@@ -7,8 +7,11 @@ html {
         primary: mat.$violet-palette,
         tertiary: mat.$rose-palette,
       ),
-      typography: (plain-family: (Inter, 'Noto Sans TC', sans-serif),
-        brand-family: (Inter, 'Noto Sans TC', sans-serif),
+      /* 用 variable font（wght 軸連續）而非靜態字重檔：
+         .word 那組 hover 效果要在 200 → 800 之間「動畫」字重，
+         靜態字重只能在載入的離散檔案之間硬跳。 */
+      typography: (plain-family: ('Inter Variable', 'Noto Sans TC Variable', sans-serif),
+        brand-family: ('Inter Variable', 'Noto Sans TC Variable', sans-serif),
       ),
       density: 0,
     ));
@@ -37,7 +40,7 @@ html.dark {
 
 body {
   margin: 0;
-  font-family: Inter, "Noto Sans TC", sans-serif;
+  font-family: 'Inter Variable', 'Noto Sans TC Variable', sans-serif;
   background-color: var(--bg-beige);
   color: var(--text-primary);
   /* 刻意不加 background-color 的 transition：::view-transition-new(root) 是 live 內容，
@@ -136,6 +139,15 @@ html {
   --btn-glass-bg: rgba(91, 63, 217, 0.78);
   --btn-glass-text: #FFFFFF;
   --btn-glass-border: rgba(255, 255, 255, 0.55);
+
+  /* .word hover 的強調色。紫底配琥珀是互補色關係，
+     在整站都是紫的畫面裡是唯一不會被吃掉的高亮色。 */
+  --amber: #B45309;
+
+  /* navbar 的邊框單獨開 token：淺色模式維持 2px 有色邊（近白背景上細邊會消失），
+     深色模式改細且深（見 html.dark 覆寫）。 */
+  --navbar-border-width: 2px;
+  --navbar-border-color: var(--glass-border);
 }
 
 html.dark {
@@ -166,6 +178,13 @@ html.dark {
   --btn-glass-bg: rgba(139, 92, 246, 0.46);
   --btn-glass-text: #F5F3FF;
   --btn-glass-border: rgba(196, 181, 253, 0.60);
+
+  --amber: #FBBF24;
+
+  /* 深色模式的 navbar 邊框：亮紫 2px 在暗底上是一條發光的粗線、太搶戲。
+     改成 1px 且壓深，只剩「有個邊界」的暗示。 */
+  --navbar-border-width: 1px;
+  --navbar-border-color: rgba(76, 52, 138, 0.85);
 }
 
 /* ===== Level 1 玻璃表面 =====
@@ -232,6 +251,137 @@ html.dark {
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
 
+/* ===== 互動 utility =====
+
+   三組共用的 hover 效果，跨頁面共用所以放全域。 */
+
+/* .word —— 取代「藍字加底線」的連結樣式。
+   字重與字距一起動：細 + 鬆 → 粗 + 緊，游標移上去時字「長胖收緊」。
+   依賴 variable font 的 wght 軸（見上方 angular.json 換成 @fontsource-variable）。 */
+.word {
+  display: inline-block;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 200;
+  letter-spacing: .04em;
+  cursor: pointer;
+  transition:
+    font-weight .55s cubic-bezier(0.16, 1, 0.3, 1),
+    letter-spacing .55s cubic-bezier(0.16, 1, 0.3, 1),
+    color .55s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover {
+    font-weight: 800;
+    letter-spacing: -.02em;
+    color: var(--amber);
+  }
+}
+
+/* 字重變化會改變行寬、把同列其他欄位推來推去。
+   用一份 800 字重的隱形副本把寬度先撐到最寬狀態，佈局就不會跳。 */
+.word-slot {
+  display: inline-grid;
+
+  >* {
+    grid-area: 1 / 1;
+  }
+
+  &::after {
+    content: attr(data-word);
+    grid-area: 1 / 1;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+/* .word 停用態（不可點的「前往」）：保留字重不做 hover */
+.word--muted {
+  color: var(--text-muted-c);
+  cursor: default;
+  font-weight: 200;
+
+  &:hover {
+    font-weight: 200;
+    letter-spacing: .04em;
+    color: var(--text-muted-c);
+  }
+}
+
+/* .search —— 收合成一顆圓形放大鏡，hover / focus 時往右展開成輸入框。
+   用 <label> 當外框，點外框任一處都會 focus 內部 input。 */
+.search {
+  display: flex;
+  align-items: center;
+  width: 3.1rem;
+  height: 3.1rem;
+  padding: 0 0.9rem;
+  border-radius: 999px;
+  overflow: hidden;
+  cursor: text;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover,
+  &:focus-within {
+    width: 14.5rem;
+  }
+
+  .search__icon {
+    flex: 0 0 auto;
+    color: var(--primary-color);
+  }
+
+  .search__input {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-left: 0.6rem;
+    border: none;
+    outline: none;
+    background: transparent;
+    font: inherit;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+
+    &::placeholder {
+      color: var(--text-muted-c);
+    }
+  }
+}
+
+/* .wipe / .over —— 兩層文字疊在一起，上層用 clip-path 由左往右揭開。
+   .over 必須和底層完全等寬等位，所以兩層都放在同一個 grid 格。 */
+.wipe {
+  display: inline-grid;
+
+  >* {
+    grid-area: 1 / 1;
+  }
+}
+
+.over {
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--amber);
+  pointer-events: none;
+}
+
+/* 觸發者是整張卡（.wipe-host），不是文字本身 ——
+   使用者的游標多半落在卡片其他地方。 */
+.wipe-host:hover .over,
+.wipe:hover .over {
+  clip-path: inset(0 0 0 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .word,
+  .over,
+  .search {
+    transition: none;
+  }
+}
+
 /* ===== Material 元件玻璃化 =====
 
    全域覆寫，12 個頁面的 template 一行都不用改。
@@ -282,6 +432,27 @@ html.dark {
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border: 1px solid var(--glass-border);
+}
+
+/* Datepicker 面板：和 dialog 同級 —— 浮在內容之上、數量恆為 1，玻璃語意最自然。
+   原本是 Material 預設的實心 surface，在玻璃頁面上是唯一一塊不透明的白/黑方塊。
+   底色必須用 --glass-bg-strong：日期格子是密集小字，底太透就讀不到。 */
+.mat-datepicker-content {
+  --mat-datepicker-calendar-container-background-color: var(--glass-bg-strong);
+  --mat-datepicker-calendar-container-text-color: var(--text-primary);
+  --mat-datepicker-calendar-container-shape: 1.25rem;
+  --mat-datepicker-calendar-date-text-color: var(--text-primary);
+  --mat-datepicker-calendar-body-label-text-color: var(--text-muted-c);
+  --mat-datepicker-calendar-period-button-text-color: var(--text-primary);
+  --mat-datepicker-calendar-navigation-button-icon-color: var(--text-primary);
+  --mat-datepicker-calendar-header-text-color: var(--text-muted-c);
+  --mat-datepicker-calendar-date-selected-state-background-color: var(--primary-color);
+  --mat-datepicker-calendar-date-today-outline-color: var(--primary-color);
+
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1.5px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight) !important;
 }
 
 /* 輸入框給自己的半透明底與較強邊框：

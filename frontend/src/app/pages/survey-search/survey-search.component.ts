@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, formatDate } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
@@ -8,6 +8,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatIconModule } from '@angular/material/icon';
 import { SurveyService } from '../../services/survey.service';
 import { Survey, TimeStatus, getTimeStatus } from '../../models/survey.model';
 @Component({
@@ -22,6 +24,8 @@ import { Survey, TimeStatus, getTimeStatus } from '../../models/survey.model';
     MatFormFieldModule,
     MatInputModule,
     MatPaginatorModule,
+    MatDatepickerModule,
+    MatIconModule,
   ],
   templateUrl: './survey-search.component.html',
   styleUrl: './survey-search.component.scss',
@@ -31,8 +35,9 @@ export class SurveySearchComponent implements OnInit {
   surveys = signal<Survey[]>([]);
   displayedColumns = ['id', 'title', 'status', 'period', 'result'];
   titleFilter = '';
-  startDateFilter = '';
-  endDateFilter = '';
+  /** matDatepicker 綁的是 Date 物件；送給後端前才轉成 yyyy-MM-dd */
+  startDate: Date | null = null;
+  endDate: Date | null = null;
   pageIndex = signal(0);
   pageSize = signal(10);
   pagedSurveys = computed(() => {
@@ -47,9 +52,18 @@ export class SurveySearchComponent implements OnInit {
   ngOnInit() {
     this.loadSurveys();
   }
+  /** 空值要送空字串（後端把它當「不過濾」），不能送 'null' */
+  private asApiDate(d: Date | null): string {
+    return d ? formatDate(d, 'yyyy-MM-dd', 'en-US') : '';
+  }
+
   loadSurveys() {
     this.surveyService
-      .getAllSurveys(this.titleFilter, this.startDateFilter, this.endDateFilter)
+      .getAllSurveys(
+        this.titleFilter,
+        this.asApiDate(this.startDate),
+        this.asApiDate(this.endDate),
+      )
       .subscribe({
         next: (data) => {
           this.surveys.set(data);

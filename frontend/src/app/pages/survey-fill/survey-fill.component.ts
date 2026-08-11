@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   FormBuilder,
@@ -19,6 +19,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { SurveyService } from '../../services/survey.service';
 import { Survey, Question } from '../../models/survey.model';
+import { AuthService } from '../../services/auth.service';
 @Component({
   selector: 'app-survey-fill',
   imports: [
@@ -44,11 +45,41 @@ export class SurveyFillComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  private auth = inject(AuthService);
 
   survey = signal<Survey | null>(null);
   fillForm: FormGroup = this.fb.group({});
   isConfirmPage = signal(false); // 是否在確認頁
   previewData = signal<any>(null); // 確認頁顯示資料
+
+  constructor() {
+    /* currentUser 是非同步載入的（AuthService 建構時才打 /users/profile），
+       而問卷也要等 API 回來才建表單 —— 兩件事誰先到都有可能。
+       用 effect 同時盯住兩個來源，哪一邊後到都會補帶入。 */
+    effect(() => {
+      const user = this.auth.currentUser();
+      this.survey(); // 建立相依：表單重建後要重新帶入
+      if (user) this.prefillFromUser();
+    });
+  }
+
+  /** 只填空白且未被使用者動過的欄位，不覆蓋已輸入的內容 */
+  private prefillFromUser() {
+    const user = this.auth.currentUser();
+    if (!user) return;
+    const fields: Array<[string, string | undefined]> = [
+      ['name', user.name],
+      ['email', user.email],
+      ['phone', user.phone],
+    ];
+    for (const [key, value] of fields) {
+      const ctrl = this.fillForm.get(key);
+      if (!ctrl || !value) continue;
+      if (ctrl.dirty || ctrl.value) continue;
+      ctrl.setValue(value);
+    }
+  }
+
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) this.loadSurvey(Number(id));
