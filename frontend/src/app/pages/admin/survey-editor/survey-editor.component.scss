@@ -103,7 +103,11 @@
 
    取代 mat-checkbox。方塊打勾是「狀態」，滑塊移動是「動作」——
    這裡切的是一個開關，用後者比較貼近語意。
-   軌道 50px、滑塊 22px、內距 3px，位移剛好 50 - 22 - 3*2 = 22px。 */
+
+   尺寸推算（border-box，含 1.5px 邊框）：
+   軌道外框 50×28 → 內部可用 47×25；滑塊 21，左右內距 2。
+   位移 = 47 - 2*2 - 21 = 22px，剛好對上規格裡的 translateX(22px)，
+   且左右各留 2px、上下由 align-items: center 對稱置中。 */
 .switch-field {
   display: inline-flex;
   align-items: center;
@@ -117,11 +121,17 @@
 }
 
 .switch {
-  position: relative;
+  /* flex + align-items: center 讓圓鈕自動落在膠囊的上下正中間，
+     不用去算 padding 與邊框加起來剩幾 px */
+  display: inline-flex;
+  align-items: center;
   flex: 0 0 auto;
+  /* 這個專案沒有全域的 box-sizing reset，不寫死就會變成 content-box，
+     50×28 會被邊框和內距撐成 57×31，位移量與左右留白就對不上了 */
+  box-sizing: border-box;
   width: 50px;
   height: 28px;
-  padding: 3px;
+  padding: 0 2px;
   border-radius: 999px;
   background: var(--glass-border-shade);
   border: 1.5px solid var(--glass-border);
@@ -131,8 +141,9 @@
 
 .switch-knob {
   display: block;
-  width: 22px;
-  height: 22px;
+  flex: 0 0 auto;
+  width: 21px;
+  height: 21px;
   border-radius: 999px;
   background: var(--glass-highlight);
   box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.35);

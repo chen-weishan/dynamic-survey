@@ -32,16 +32,29 @@
     <button mat-raised-button color="primary" (click)="onSearch()">
       搜尋
     </button>
+    <button mat-stroked-button (click)="onClear()">清除條件</button>
   </div>
   <div class="bg-white rounded-lg shadow overflow-hidden">
     <table mat-table [dataSource]="pagedSurveys()" class="w-full">
       <ng-container matColumnDef="id">
-        <th mat-header-cell *matHeaderCellDef>編號</th>
+        <th mat-header-cell *matHeaderCellDef>
+          <button type="button" class="sort-head" (click)="toggleSort('id')"
+            [class.is-sorted]="sortKey() === 'id'">
+            <span>編號</span>
+            <mat-icon class="sort-head__icon">{{ sortIcon('id') }}</mat-icon>
+          </button>
+        </th>
         <td mat-cell *matCellDef="let s">#{{ s.id }}</td>
       </ng-container>
 
       <ng-container matColumnDef="title">
-        <th mat-header-cell *matHeaderCellDef>名稱</th>
+        <th mat-header-cell *matHeaderCellDef>
+          <button type="button" class="sort-head" (click)="toggleSort('title')"
+            [class.is-sorted]="sortKey() === 'title'">
+            <span>名稱</span>
+            <mat-icon class="sort-head__icon">{{ sortIcon('title') }}</mat-icon>
+          </button>
+        </th>
         <td mat-cell *matCellDef="let s">
           <!-- word-slot 用一份 800 字重的隱形副本先撐好寬度，
                hover 時字變粗才不會把整列往右推。 -->
@@ -55,7 +68,13 @@
         </td>
       </ng-container>
       <ng-container matColumnDef="status">
-        <th mat-header-cell *matHeaderCellDef>狀態</th>
+        <th mat-header-cell *matHeaderCellDef>
+          <button type="button" class="sort-head" (click)="toggleSort('status')"
+            [class.is-sorted]="sortKey() === 'status'">
+            <span>狀態</span>
+            <mat-icon class="sort-head__icon">{{ sortIcon('status') }}</mat-icon>
+          </button>
+        </th>
         <td mat-cell *matCellDef="let s">
           @if (timeStatusOf(s) === "ONGOING") {
             <mat-chip class="!bg-green-100 !text-green-700">{{
@@ -73,7 +92,13 @@
         </td>
       </ng-container>
       <ng-container matColumnDef="period">
-        <th mat-header-cell *matHeaderCellDef>開始/結束時間</th>
+        <th mat-header-cell *matHeaderCellDef>
+          <button type="button" class="sort-head" (click)="toggleSort('period')"
+            [class.is-sorted]="sortKey() === 'period'">
+            <span>開始/結束時間</span>
+            <mat-icon class="sort-head__icon">{{ sortIcon('period') }}</mat-icon>
+          </button>
+        </th>
         <td mat-cell *matCellDef="let s" class="text-sm text-gray-500">
           {{ s.startDate }} ~ {{ s.endDate }}
         </td>

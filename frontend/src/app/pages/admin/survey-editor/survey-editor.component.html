@@ -72,31 +72,35 @@
       <!-- 題型切換：滑動的玻璃選取塊（rail）。
            --i 綁在選中的索引上，hover 時由 :has() 暫時把塊拉到游標下方，
            滑鼠離開就彈回實際選取項 —— 所以「預覽」與「已選」用的是同一顆塊。 -->
-      <div class="rail glass mb-3" [class.rail--i0]="typeIndex(i) === 0" [class.rail--i1]="typeIndex(i) === 1"
-        [class.rail--i2]="typeIndex(i) === 2">
-        @for (t of questionTypes; track t.value) {
-        <button type="button" class="rail__btn" [class.is-active]="q.get('type')?.value === t.value"
-          [attr.aria-pressed]="q.get('type')?.value === t.value" (click)="setType(i, t.value)">
-          {{ t.label }}
-        </button>
-        }
-      </div>
+      <!-- rail 與必填開關同一列，交給 flex 做上下置中；
+           兩者高度不同，靠 inline 元素的 baseline 對不齊。 -->
+      <div class="flex items-center gap-4 mb-3">
+        <div class="rail glass" [class.rail--i0]="typeIndex(i) === 0" [class.rail--i1]="typeIndex(i) === 1"
+          [class.rail--i2]="typeIndex(i) === 2">
+          @for (t of questionTypes; track t.value) {
+          <button type="button" class="rail__btn" [class.is-active]="q.get('type')?.value === t.value"
+            [attr.aria-pressed]="q.get('type')?.value === t.value" (click)="setType(i, t.value)">
+            {{ t.label }}
+          </button>
+          }
+        </div>
 
-      <!-- 必填：自製開關。mat-checkbox 是「有沒有打勾」的靜態方塊，
-           這裡要的是滑塊帶回彈的切換手感，所以自己畫。
-           整顆是 role="switch" 的 button，鍵盤 Enter / Space 原生就能切。 -->
-      <button
-        type="button"
-        class="switch-field ml-4"
-        role="switch"
-        [attr.aria-checked]="q.get('required')?.value"
-        (click)="toggleRequired(i)"
-      >
-        <span class="switch" [class.on]="q.get('required')?.value">
-          <span class="switch-knob"></span>
-        </span>
-        <span class="switch-text">必填</span>
-      </button>
+        <!-- 必填：自製開關。mat-checkbox 是「有沒有打勾」的靜態方塊，
+             這裡要的是滑塊帶回彈的切換手感，所以自己畫。
+             整顆是 role="switch" 的 button，鍵盤 Enter / Space 原生就能切。 -->
+        <button
+          type="button"
+          class="switch-field"
+          role="switch"
+          [attr.aria-checked]="q.get('required')?.value"
+          (click)="toggleRequired(i)"
+        >
+          <span class="switch" [class.on]="q.get('required')?.value">
+            <span class="switch-knob"></span>
+          </span>
+          <span class="switch-text">必填</span>
+        </button>
+      </div>
 
       <!-- 選項區域 (只有非純文字題時顯示) -->
       @if (q.get("type")?.value !== "TEXT") {

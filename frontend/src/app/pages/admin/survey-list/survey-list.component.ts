@@ -15,7 +15,10 @@ import { SurveyService } from '../../../services/survey.service';
 import {
   Survey,
   TimeStatus,
+  SurveySortKey,
+  SortDir,
   getTimeStatus,
+  sortSurveys,
 } from '../../../models/survey.model';
 @Component({
   selector: 'app-survey-list',
@@ -55,10 +58,19 @@ export class SurveyListComponent implements OnInit {
   pageIndex = signal(0);
   pageSize = signal(10);
 
-  // 目前這一頁要顯示的資料 (前端分頁：從完整陣列切一段出來)
+  /** 目前的排序欄位與方向；null 代表照後端回傳的順序 */
+  sortKey = signal<SurveySortKey | null>(null);
+  sortDir = signal<SortDir>('asc');
+
+  /** 排序是純前端的：資料量小，不值得為它多跑一趟後端 */
+  private sorted = computed(() =>
+    sortSurveys(this.surveys(), this.sortKey(), this.sortDir()),
+  );
+
+  // 目前這一頁要顯示的資料 (前端分頁：從排序後的陣列切一段出來)
   pagedSurveys = computed(() => {
     const start = this.pageIndex() * this.pageSize();
-    return this.surveys().slice(start, start + this.pageSize());
+    return this.sorted().slice(start, start + this.pageSize());
   });
   /** 空值要送空字串（後端把它當「不過濾」），不能送 'null' */
   private asApiDate(d: Date | null): string {
@@ -83,6 +95,31 @@ export class SurveyListComponent implements OnInit {
   }
   onSearch() {
     this.loadSurveys();
+  }
+
+  /** 清除全部條件並重新載入（沒有條件＝顯示所有問卷） */
+  onClear() {
+    this.titleFilter = '';
+    this.startDate = null;
+    this.endDate = null;
+    this.loadSurveys();
+  }
+
+  /** 同一欄再按一次換方向，換一欄則從正序開始 */
+  toggleSort(key: SurveySortKey) {
+    if (this.sortKey() === key) {
+      this.sortDir.update((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      this.sortKey.set(key);
+      this.sortDir.set('asc');
+    }
+    this.pageIndex.set(0);
+  }
+
+  /** 表頭箭頭圖示：未排序的欄位顯示雙向箭頭 */
+  sortIcon(key: SurveySortKey): string {
+    if (this.sortKey() !== key) return 'unfold_more';
+    return this.sortDir() === 'asc' ? 'arrow_upward' : 'arrow_downward';
   }
   onPageChange(e: PageEvent) {
     this.pageIndex.set(e.pageIndex);

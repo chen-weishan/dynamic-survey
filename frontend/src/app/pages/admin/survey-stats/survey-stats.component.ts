@@ -300,11 +300,20 @@ export class SurveyStatsComponent implements OnInit {
         ? undefined
         : kind === 'radar'
           ? {
+              /* 半徑軸必須從 0 起算。
+                 Chart.js 預設會把最小值當軸心（例如 18~35 的資料軸心就是 18），
+                 於是最小的那幾項全部縮到圓心變成一根針，圖形完全讀不出比例。 */
               r: {
+                beginAtZero: true,
+                min: 0,
                 grid: { color: grid },
                 angleLines: { color: grid },
                 pointLabels: { color: ink, font: { size: 11 } },
-                ticks: { color: ink, backdropColor: 'transparent' },
+                ticks: {
+                  color: ink,
+                  backdropColor: 'transparent',
+                  precision: 0,
+                },
               },
             }
           : {

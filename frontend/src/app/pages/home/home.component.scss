@@ -10,10 +10,8 @@
     transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
     box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* hover 底色：一層由左往右揭開的玻璃。
-
-     用 clip-path 而不是 transform: scaleX —— scaleX 會把漸層一起橫向壓扁，
-     看起來像「底色被拉長」而不是「刷過去」。
+  /* hover 底色：整片一起淡入，不做由左至右的揭開。
+     底色仍是半透明 + backdrop blur，所以維持玻璃質感。
      ::before 已經被 .mat-mdc-card 的漸層光邊佔走，所以這裡用 ::after。 */
   &::after {
     content: '';
@@ -21,12 +19,12 @@
     inset: 0;
     z-index: 0;
     border-radius: inherit;
-    background: var(--card-sweep);
+    background: var(--card-hover-bg);
     backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     box-shadow: inset 0 1px 0 0 var(--glass-highlight);
-    clip-path: inset(0 100% 0 0);
-    transition: clip-path 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity: 0;
+    transition: opacity 0.35s ease;
     pointer-events: none;
   }
 
@@ -48,34 +46,12 @@
 
   &:hover::after,
   &:focus-visible::after {
-    clip-path: inset(0 0 0 0);
+    opacity: 1;
   }
 
   &:focus-visible {
     outline: 2px solid var(--primary-color);
     outline-offset: 3px;
-  }
-}
-
-/* 底色刷過去之後原本的深紫字會被吃掉，文字色要一起換。
-   跟著 clip-path 同步過渡，不會出現「底色已變、字還是舊色」的半秒。 */
-.survey-card .mat-mdc-card-title,
-.survey-card .mat-mdc-card-subtitle,
-.survey-card .text-muted,
-.survey-card .survey-card__hint {
-  transition: color 0.55s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.survey-card:hover,
-.survey-card:focus-visible {
-  .mat-mdc-card-title,
-  .survey-card__hint {
-    color: var(--card-sweep-ink);
-  }
-
-  .mat-mdc-card-subtitle,
-  .text-muted {
-    color: var(--card-sweep-ink-muted);
   }
 }
 
@@ -96,11 +72,7 @@
 @media (prefers-reduced-motion: reduce) {
 
   .survey-card,
-  .survey-card::after,
-  .survey-card .mat-mdc-card-title,
-  .survey-card .mat-mdc-card-subtitle,
-  .survey-card .text-muted,
-  .survey-card .survey-card__hint {
+  .survey-card::after {
     transition: none;
   }
 }
