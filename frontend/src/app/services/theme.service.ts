@@ -79,7 +79,9 @@ export class ThemeService {
     const transition = doc.startViewTransition(() => this.apply(next));
     await transition.ready;
 
-    // 700ms 是刻意的慢：投影機上快動畫會拖影變糊，慢而大的動作才傳得到觀眾眼裡
+    // easing 刻意用 linear：cubic-bezier(0.22,1,0.36,1) 是 ease-out 曲線，
+    // 尾段速度趨近於零，圓形擴散到接近全螢幕時會明顯「拖」一下才收尾。
+    // 等速擴散反而俐落，而且更像水波推過畫面。
     document.documentElement.animate(
       {
         clipPath: [
@@ -88,8 +90,8 @@ export class ThemeService {
         ],
       },
       {
-        duration: 700,
-        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+        duration: 520,
+        easing: 'linear',
         pseudoElement: '::view-transition-new(root)',
       },
     );

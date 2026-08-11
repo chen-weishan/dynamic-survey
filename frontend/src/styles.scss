@@ -669,6 +669,27 @@ mat-toolbar.mat-toolbar {
   --mat-table-background-color: transparent;
 }
 
+/* Paginator 有自己的容器底色 token，不跟著 table 走 ——
+   深色模式下它會是一塊獨立的近黑色橫條黏在表格下緣。 */
+.mat-mdc-paginator {
+  --mat-paginator-container-background-color: transparent;
+  --mat-paginator-container-text-color: var(--text-primary);
+  background: transparent;
+}
+
+/* Chip 的文字色設在內部的 .mdc-evolution-chip__text-label 上，
+   template 寫的 !text-green-700 / !text-blue-700 / !text-red-700 是套在 host，
+   會被子元素自己的 color 蓋掉 —— 深色模式下就變成淺底配淺字、讀不到。
+   讓 label 繼承 host 的 color，一次修好三種狀態色。 */
+.mat-mdc-standard-chip {
+  --mdc-chip-container-shape-radius: 0.7rem;
+
+  .mdc-evolution-chip__text-label {
+    color: inherit !important;
+    font-weight: 600;
+  }
+}
+
 /* .bg-white 是 8 處頁面的卡片容器（那些頁面沒用 mat-card）。
    兩個模式都改成玻璃：深色模式修可讀性，
    淺色模式順便解決「艷麗背景 + 白盒子」不通透的問題。

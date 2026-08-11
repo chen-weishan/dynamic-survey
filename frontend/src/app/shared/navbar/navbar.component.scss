@@ -21,7 +21,8 @@
 
 .navbar--scrolled {
   max-width: 62rem;
-  margin-top: 0.75rem;
+  /* 收縮後要明顯離開畫面頂端，否則看起來只是「變窄」而不是「浮起來」 */
+  margin-top: 1.6rem;
   border-radius: 1.75rem;
   border-bottom-color: transparent;
   border: 2px solid var(--glass-border);
