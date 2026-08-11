@@ -104,7 +104,7 @@ html {
   --text-muted-c: #5A5480;
 
   /* Level 1 玻璃表面 */
-  --glass-bg: rgba(255, 255, 255, 0.62);
+  --glass-bg: rgba(255, 255, 255, 0.52);
   --glass-bg-strong: rgba(255, 255, 255, 0.80);
   --glass-border: rgba(255, 255, 255, 0.95);
   --glass-border-shade: rgba(91, 63, 217, 0.22);
@@ -118,7 +118,12 @@ html {
   --grad-1: #8B5CF6;
   --grad-2: #38BDF8;
   --grad-3: #FB7185;
-  --grad-opacity: 0.55;
+  /* 背景刻意退到配角：原本 0.55 太搶戲，形成「艷麗背景 + 白盒子」，
+     而且背景越艷、卡片就必須越不透明才讀得到字，玻璃的通透感就消失。
+     降背景飽和讓卡片能更透，兩件事一起改善。 */
+  --grad-opacity: 0.30;
+  /* 中央柔化遮罩：讓內容區後方乾淨、色彩退到畫面邊緣 */
+  --veil-color: rgba(255, 255, 255, 0.58);
 }
 
 html.dark {
@@ -128,8 +133,8 @@ html.dark {
   --text-muted-c: #A5A0C7;
 
   /* 深色模式的光暈刻意開得比「正常」更強：投影機會把亮部吃掉一截 */
-  --glass-bg: rgba(45, 35, 95, 0.55);
-  --glass-bg-strong: rgba(45, 35, 95, 0.78);
+  --glass-bg: rgba(45, 35, 95, 0.48);
+  --glass-bg-strong: rgba(45, 35, 95, 0.74);
   --glass-border: rgba(167, 139, 250, 0.60);
   --glass-border-shade: rgba(0, 0, 0, 0.45);
   --glass-highlight: rgba(196, 181, 253, 0.65);
@@ -141,7 +146,8 @@ html.dark {
   --grad-1: #7C3AED;
   --grad-2: #0EA5E9;
   --grad-3: #E11D48;
-  --grad-opacity: 0.75;
+  --grad-opacity: 0.42;
+  --veil-color: rgba(13, 10, 31, 0.62);
 }
 
 /* ===== Level 1 玻璃表面 =====
@@ -645,3 +651,97 @@ mat-toolbar.mat-toolbar {
    Tailwind 沒有的自訂語意 class 仍由上方定義提供。 */
 @tailwind components;
 @tailwind utilities;
+
+/* ===== 深淺色適配層（必須放在 @tailwind utilities 之後才能勝出）=====
+
+   背景：template 原本就照 Tailwind 的寫法寫了顏色 class（bg-white、
+   text-gray-800、text-indigo-600…），但專案一直沒裝 Tailwind，
+   那些 class 全是死的。裝上 Tailwind 後它們一次全部活了，
+   而它們全是為「淺色底」寫死的，深色模式下會出現白底淺字、
+   深灰字配深底這類完全不可讀的組合。
+   styles.scss 既有的手寫語意色（.text-success #2e7d32、.text-link #1976d2…）
+   同樣是硬編淺色底的值。這一層把兩批都重新映射到 glass token。 */
+
+/* 表格背景必須餵 token。直接寫 background 會被 Material 的 component style
+   蓋回 --mat-sys-surface（深色模式 ≈ #151316），那塊近黑會蓋在容器之上，
+   玻璃感整個消失（已實測，就是深色模式下表格變成一塊實心黑的原因）。 */
+.mat-mdc-table {
+  --mat-table-background-color: transparent;
+}
+
+/* .bg-white 是 8 處頁面的卡片容器（那些頁面沒用 mat-card）。
+   兩個模式都改成玻璃：深色模式修可讀性，
+   淺色模式順便解決「艷麗背景 + 白盒子」不通透的問題。
+
+   刻意不加 backdrop-filter：其中 survey-stats 那處是多實例的統計項，
+   而 aurora 背景本身已 blur(80px)，透過半透明表面看到的已經是柔化色塊，
+   再疊一層模糊的邊際價值很低，效能成本卻是實在的。 */
+.bg-white {
+  background-color: var(--glass-bg) !important;
+  border-radius: 1rem;
+  box-shadow: var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight) !important;
+}
+
+html.dark {
+  /* Tailwind 灰階文字 */
+  .text-gray-800,
+  .text-gray-700,
+  .text-gray-600 {
+    color: var(--text-primary) !important;
+  }
+
+  .text-gray-500,
+  .text-gray-400 {
+    color: var(--text-muted-c) !important;
+  }
+
+  /* Tailwind indigo 文字：深色底需要亮紫才讀得到 */
+  .text-indigo-900,
+  .text-indigo-800,
+  .text-indigo-700,
+  .text-indigo-600 {
+    color: var(--primary-color) !important;
+  }
+
+  /* Tailwind 淺色底與淺色邊框 */
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-indigo-50,
+  .bg-indigo-100 {
+    background-color: rgba(167, 139, 250, 0.12) !important;
+  }
+
+  .border-gray-200,
+  .border-indigo-100 {
+    border-color: var(--glass-border-shade) !important;
+  }
+
+  .border-indigo-500 {
+    border-color: var(--primary-color) !important;
+  }
+
+  /* styles.scss 既有的手寫語意色 */
+  .text-success {
+    color: #6EE7A8 !important;
+  }
+
+  .text-danger {
+    color: #FF8A8A !important;
+  }
+
+  .text-link {
+    color: #7DD3FC !important;
+  }
+
+  .text-muted {
+    color: var(--text-muted-c) !important;
+  }
+
+  .bg-subtle {
+    background-color: rgba(167, 139, 250, 0.10) !important;
+  }
+
+  .bg-accent-tint {
+    background-color: rgba(167, 139, 250, 0.16) !important;
+  }
+}

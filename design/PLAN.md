@@ -117,6 +117,45 @@ Google CDN 那份 CSS 有附 `.material-icons` 的 ligature 設定，`@fontsourc
 本專案所有 icon 都是 ligature 模式（`<mat-icon>menu</mat-icon>`，已確認無 `svgIcon` 用法），
 少了那組設定圖示會全部顯示成英文字。已在 `styles.scss` 補上 `.material-icons, .mat-ligature-font`。
 
+### 修正 5（重要）：裝 Tailwind 讓一批「死 class」全部復活
+
+`template` 原本就照 Tailwind 的寫法寫了顏色 class —— `bg-white`(8)、`text-gray-500`(6)、
+`text-indigo-600`(3)、`text-gray-800`(3)、`bg-indigo-50`、`border-gray-200`、
+`!bg-green-100` 等，共 28 種、約 55 個使用點。但專案一直沒裝 Tailwind，
+**這些 class 全都是無效的死 class**。裝上 Tailwind 後它們一次全部生效，
+而它們全是為「淺色底」寫死的，深色模式下產生大量不可讀組合。
+
+實測到的具體災難：
+
+- `.bg-white` → 純白底 + 繼承的淺紫白文字 = 白底淺字。8 處頁面的卡片容器都是它
+  （那些頁面**沒有用 mat-card**，是 `<div class="bg-white rounded-lg shadow">`）
+- `.text-gray-800` → `rgb(31,41,55)` 深灰配深底
+- `.mat-mdc-table` 的 `background: transparent` 被 Material component style 蓋回
+  `--mat-sys-surface`（深色 ≈ `#151316`），那塊近黑蓋在容器上 —— 這就是深色模式下
+  表格變成一塊實心黑的原因
+
+一併發現 `styles.scss` 既有的手寫語意色也是硬編淺色底的值：
+`.text-success #2e7d32`、`.text-link #1976d2`、`.bg-subtle #f5f5f5`、`.bg-accent-tint #ede7f6`。
+
+**解法**：在 `@tailwind utilities` 之後加一層「深淺色適配層」，把兩批都重新映射到 glass token。
+`.bg-white` 在**兩個模式**都改成玻璃 —— 深色修可讀性，淺色順便解決通透感問題。
+
+**通用教訓（已重複踩到三次）**：覆寫 Angular Material 必須**餵 `--mdc-*` / `--mat-*` token**，
+不能直接寫屬性。mdc 內部規則的 specificity 高於 `.mat-mdc-*`，直接寫的屬性會被靜默蓋掉。
+已知踩點：card 的 `box-shadow`（inset 高光整個消失）、table 的 `background`。
+
+### 修正 6：背景飽和度是連鎖問題的源頭
+
+第一版 `--grad-opacity` 淺色 0.55 / 深色 0.75 太搶戲，畫面變成
+「艷麗漸層背景 + 白色/黑色盒子」，不是 rondesignlab 那種質感。
+
+關鍵因果：**背景越艷 → 卡片必須越不透明才讀得到字 → 卡片變成實心盒子 → 通透感消失。**
+所以降背景飽和不是「讓畫面變淡」，是**讓卡片能更透**，兩件事一起改善。
+
+已調整為 `--grad-opacity` 0.30 / 0.42、`--glass-bg` 淺色 0.52 / 深色 0.48，
+並在 aurora 加一層中央柔化遮罩（`.aurora__veil`，radial-gradient 中央濃邊緣透），
+讓內容區後方乾淨、色彩退到畫面邊緣 —— 同時解決「內容少的頁面下半部裸露大片飽和色塊」。
+
 ### 高槓桿發現：既有頁面自動支援深色模式
 
 12 個既有頁面全都透過 `var(--primary-color)` 與 `var(--bg-beige)` 取色。

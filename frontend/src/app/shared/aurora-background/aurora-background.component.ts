@@ -18,6 +18,7 @@ import { Component } from '@angular/core';
       <span class="aurora__blob aurora__blob--1"></span>
       <span class="aurora__blob aurora__blob--2"></span>
       <span class="aurora__blob aurora__blob--3"></span>
+      <span class="aurora__veil"></span>
     </div>
   `,
   styles: `
@@ -27,6 +28,17 @@ import { Component } from '@angular/core';
       z-index: 0;
       overflow: hidden;
       pointer-events: none;
+    }
+
+    /* 中央柔化遮罩：內容區後方壓淡，色彩退到畫面邊緣。
+       沒有這層的話，內容少的頁面下半部會裸露大片飽和色塊、構圖鬆散，
+       而且卡片必須做得更不透明才讀得到字。 */
+    .aurora__veil {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 72% 58% at 50% 40%,
+          var(--veil-color) 0%,
+          transparent 100%);
     }
 
     .aurora__blob {
