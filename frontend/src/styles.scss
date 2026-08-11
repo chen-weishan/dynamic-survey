@@ -144,6 +144,172 @@ html.dark {
   --grad-opacity: 0.75;
 }
 
+/* ===== Level 1 玻璃表面 =====
+
+   分三級，差別在效能成本而非只是視覺強度：
+
+   .glass        完整版：backdrop-filter + 漸層光邊。每個實例是獨立的 GPU 合成層，
+                 只用在「大面積、數量少」的表面（表單卡、dialog、圖表卡、外層容器）。
+   .glass-lite   無 backdrop-filter，只有半透明底 + 光邊 + 高光。
+                 用在數量多又會滾動的元素（列表每一列）——那是掉幀最經典的組合。
+                 投影機的模糊本來就吃掉大半 backdrop 模糊效果，兩者在投影上差異很小。
+   .glass-strong 更不透明，用在需要高可讀性的地方（輸入表單、填答頁的問題卡）。
+
+   邊緣光線用漸層邊框 + inset 高光「假裝」折射：
+   真折射（SVG feDisplacementMap）位移只有幾個 pixel，投影機上看不出來，
+   已排除在今天範圍外。 */
+
+%glass-base {
+  position: relative;
+  border-radius: 1.5rem;
+  background: var(--glass-bg);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight);
+}
+
+/* 漸層光邊：用 mask 把中間挖空，只留 2px 的環。
+   刻意用 2px 而非 1px —— 髮絲邊框在投影機上會直接消失。 */
+%glass-edge {
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 2px;
+    border-radius: inherit;
+    background: linear-gradient(140deg,
+        var(--glass-highlight) 0%,
+        transparent 38%,
+        transparent 62%,
+        var(--glass-glow) 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+.glass {
+  @extend %glass-base;
+  @extend %glass-edge;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+.glass-lite {
+  @extend %glass-base;
+  @extend %glass-edge;
+}
+
+.glass-strong {
+  @extend %glass-base;
+  @extend %glass-edge;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+/* ===== Material 元件玻璃化 =====
+
+   全域覆寫，12 個頁面的 template 一行都不用改。
+   優先用 Material 的 --mdc-* / --mat-* token（比 !important 乾淨），
+   token 蓋不到的（backdrop-filter、漸層光邊）才補寫屬性。 */
+
+.mat-mdc-card {
+  --mdc-elevated-card-container-color: var(--glass-bg);
+  --mdc-outlined-card-container-color: var(--glass-bg);
+  --mdc-elevated-card-container-shape: 1.5rem;
+  --mdc-outlined-card-container-shape: 1.5rem;
+
+  /* 陰影必須從 elevation token 餵進去，不能直接寫 box-shadow：
+     mdc 內部規則的 specificity 比 .mat-mdc-card 高，會蓋掉外部宣告
+     （實測 computed 會變回 Material 預設 elevation，inset 高光整個消失）。 */
+  --mdc-elevated-card-container-elevation: var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight);
+
+  position: relative;
+  border-radius: 1.5rem;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 2px;
+    border-radius: inherit;
+    background: linear-gradient(140deg,
+        var(--glass-highlight) 0%,
+        transparent 38%,
+        transparent 62%,
+        var(--glass-glow) 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+/* Dialog 天生浮在內容之上，玻璃語意最自然，且數量恆為 1 */
+.mat-mdc-dialog-surface {
+  --mdc-dialog-container-color: var(--glass-bg-strong);
+  --mdc-dialog-container-shape: 1.5rem;
+
+  box-shadow: var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+}
+
+/* 輸入框給自己的半透明底與較強邊框：
+   投影機上若讓它直接透出卡片背景，欄位邊界會看不出來。 */
+.mat-mdc-form-field {
+  --mdc-outlined-text-field-outline-color: var(--glass-border-shade);
+  --mdc-outlined-text-field-hover-outline-color: var(--primary-color);
+  --mdc-outlined-text-field-focus-outline-color: var(--primary-color);
+  --mdc-outlined-text-field-container-shape: 0.9rem;
+  --mdc-outlined-text-field-outline-width: 1.5px;
+  --mdc-outlined-text-field-focus-outline-width: 2.5px;
+
+  .mat-mdc-text-field-wrapper {
+    background: var(--glass-bg-strong);
+    border-radius: 0.9rem;
+  }
+}
+
+/* Toolbar：navbar 重做前先讓它有玻璃底，
+   這樣即使 navbar 那步沒做完，全站頂部風格也是一致的。 */
+mat-toolbar.mat-toolbar {
+  background: var(--glass-bg-strong);
+  color: var(--text-primary);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-bottom: 2px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* 表格：統計頁與紀錄頁用，讓它的底透出玻璃而不是實心白 */
+.mat-mdc-table {
+  background: transparent;
+
+  .mat-mdc-header-row,
+  .mat-mdc-row {
+    background: transparent;
+  }
+}
+
+/* 按鈕刻意不玻璃化：投影機上實心高對比的 CTA 最清楚，
+   半透明按鈕在投影上會直接消失。只統一圓角讓風格一致。 */
+.mat-mdc-raised-button,
+.mat-mdc-unelevated-button,
+.mat-mdc-outlined-button,
+.mat-mdc-button {
+  --mdc-filled-button-container-shape: 0.75rem;
+  --mdc-protected-button-container-shape: 0.75rem;
+  --mdc-outlined-button-container-shape: 0.75rem;
+  --mdc-text-button-container-shape: 0.75rem;
+  font-weight: 600;
+}
+
 /* 修正 Angular Material 表單外框的細節 */
 .mat-mdc-form-field .mdc-notched-outline__notch {
   border-left: none !important;
