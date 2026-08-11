@@ -12,19 +12,22 @@
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border-bottom: 2px solid var(--glass-border);
   box-shadow: var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight);
+  transform: translateY(0);
   transition:
     max-width 500ms cubic-bezier(0.22, 1, 0.36, 1),
     border-radius 500ms cubic-bezier(0.22, 1, 0.36, 1),
-    margin-top 500ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 500ms cubic-bezier(0.22, 1, 0.36, 1),
     padding 500ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .navbar--scrolled {
   max-width: 62rem;
-  /* 收縮後要明顯離開畫面頂端，否則看起來只是「變窄」而不是「浮起來」 */
-  margin-top: 1.6rem;
+  /* 用 transform 而非 margin-top 讓它離開頂端：
+     .navbar 的 margin-top 會和 app-navbar 這個 host 發生 margin collapse，
+     穿過邊界後被 sticky 的定位計算吸收，實際間距遠小於設定值。
+     transform 不參與佈局、不會 collapse，而且是純合成操作、動畫更順。 */
+  transform: translateY(1.4rem);
   border-radius: 1.75rem;
-  border-bottom-color: transparent;
   border: 2px solid var(--glass-border);
 }
 

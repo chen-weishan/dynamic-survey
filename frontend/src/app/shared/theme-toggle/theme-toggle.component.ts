@@ -13,12 +13,22 @@ import { ThemeService } from '../../services/theme.service';
       [attr.aria-label]="theme.isDark() ? '切換至淺色模式' : '切換至深色模式'"
       (click)="onToggle($event)"
     >
-      <mat-icon>{{ theme.isDark() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      <mat-icon [class.is-dark]="theme.isDark()">
+        {{ theme.isDark() ? 'light_mode' : 'dark_mode' }}
+      </mat-icon>
     </button>
   `,
   styles: `
     :host {
       display: inline-flex;
+    }
+
+    mat-icon {
+      transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    mat-icon.is-dark {
+      transform: rotate(180deg);
     }
   `,
 })

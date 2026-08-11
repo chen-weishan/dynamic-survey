@@ -5,7 +5,8 @@
     @if (q.type !== 'TEXT') {
     <div class="flex flex-col gap-8">
       <div class="w-full" style="max-width: 300px;">
-        <canvas baseChart [data]="getChartData(q)" [options]="pieChartOptions()" [type]="'pie'"></canvas>
+        <canvas baseChart [data]="chartDataById().get(q.questionId)!" [options]="pieChartOptions()"
+          [type]="'pie'"></canvas>
       </div>
       <table class="w-full text-sm">
         @for (opt of (q.optionStats | keyvalue); track opt.key) {

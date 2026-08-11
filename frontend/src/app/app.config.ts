@@ -1,5 +1,5 @@
 import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
-import { provideRouter, withViewTransitions } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
@@ -9,10 +9,10 @@ import { authInterceptor } from './interceptors/auth.interceptor';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
-    // 路由過場交給 View Transitions API，動畫定義在 styles.scss 的
-    // ::view-transition-old/new(root)。深淺色切換共用同一組偽元素，
-    // 靠 html.theme-switching 這個 class 區分（見 ThemeService）。
-    provideRouter(routes, withViewTransitions()),
+    // 刻意不用 withViewTransitions()：頁面之間跳轉的整頁過場會拖慢節奏，
+    // 而且會和深淺色切換搶同一組 ::view-transition 偽元素。
+    // 換頁的動態感由卡片 stagger 進場提供（見 styles.scss 的 rise-in）。
+    provideRouter(routes),
     provideAnimationsAsync(),
     provideHttpClient(
       withInterceptors([authInterceptor]), // 註冊 JWT 攔截器

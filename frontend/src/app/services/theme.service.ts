@@ -86,17 +86,13 @@ export class ThemeService {
         Math.max(y, effectiveHeight - y),
       ) * 1.12;
 
-    // 路由切換也用 View Transitions，但兩者要的動畫不同。
-    // 這個 class 讓 CSS 只在「切換配色」時停用預設的 cross-fade。
-    document.documentElement.classList.add('theme-switching');
-
     const transition = doc.startViewTransition(() => this.apply(next));
     await transition.ready;
 
     // easing 刻意用 linear：cubic-bezier(0.22,1,0.36,1) 是 ease-out 曲線，
     // 尾段速度趨近於零，圓形擴散到接近全螢幕時會明顯「拖」一下才收尾。
     // 等速擴散反而俐落，而且更像水波推過畫面。
-    const animation = document.documentElement.animate(
+    document.documentElement.animate(
       {
         clipPath: [
           `circle(0px at ${x}px ${y}px)`,
@@ -109,11 +105,5 @@ export class ThemeService {
         pseudoElement: '::view-transition-new(root)',
       },
     );
-
-    try {
-      await animation.finished;
-    } finally {
-      document.documentElement.classList.remove('theme-switching');
-    }
   }
 }

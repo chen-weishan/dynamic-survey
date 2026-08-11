@@ -1,4 +1,4 @@
-import { Component, HostListener, inject, signal } from '@angular/core';
+import { Component, DestroyRef, NgZone, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../../services/auth.service';
@@ -17,10 +17,29 @@ export class NavbarComponent {
   readonly scrolled = signal(false);
   readonly menuOpen = signal(false);
 
-  @HostListener('window:scroll')
-  onScroll(): void {
-    // signal 設成相同值不會觸發變更偵測，所以這裡不需要自己節流
-    this.scrolled.set(window.scrollY > 10);
+  constructor() {
+    const zone = inject(NgZone);
+    const destroyRef = inject(DestroyRef);
+
+    // 刻意在 Angular zone 外面監聽 scroll，只有「狀態真的翻轉」時才進 zone。
+    // 用 @HostListener('window:scroll') 的話每一次滾動事件都會觸發整個 app 的
+    // 變更偵測 —— 在 demo 機（LG Gram、整合顯卡）上那是白花的成本，
+    // 而且會讓 template 裡呼叫方法的元件（例如統計頁的圖表）反覆重算。
+    zone.runOutsideAngular(() => {
+      const onScroll = () => {
+        const next = window.scrollY > 10;
+        if (next !== this.scrolled()) {
+          zone.run(() => this.scrolled.set(next));
+        }
+      };
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      destroyRef.onDestroy(() => {
+        window.removeEventListener('scroll', onScroll);
+      });
+    });
   }
 
   toggleMenu(): void {

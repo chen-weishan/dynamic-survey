@@ -39,8 +39,25 @@ export class SurveyStatsComponent implements OnInit {
         error: (err) => console.error('無法載入統計數據', err),
       });
   }
+  /**
+   * 圖表資料必須快取，不能在 template 直接呼叫方法。
+   *
+   * 方法每次變更偵測都會回傳「新的物件」，ng2-charts 看到 data input 換了參照
+   * 就重繪整張圖（連帶重跑進場動畫）—— 症狀是一滾動圓餅圖就重跑一次。
+   *
+   * 這個 computed 只依賴 stats() 與 theme.isDark()，滾動不會讓它重算，
+   * 參照因此保持穩定；切換主題時才重算，那正是我們要重繪的時機。
+   */
+  readonly chartDataById = computed(() => {
+    const map = new Map<number, ChartData<'pie'>>();
+    for (const q of this.stats()?.questionStats ?? []) {
+      map.set(q.questionId, this.buildChartData(q));
+    }
+    return map;
+  });
+
   // 把後端統計 Map 轉成 Chart.js 圓餅圖資料
-  getChartData(q: QuestionStats): ChartData<'pie'> {
+  private buildChartData(q: QuestionStats): ChartData<'pie'> {
     if (!q.optionStats) return { labels: [], datasets: [] };
     return {
       labels: Object.values(q.optionStats).map((o) => o.optionText),
