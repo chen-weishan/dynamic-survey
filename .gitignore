@@ -14,3 +14,8 @@ build/
 
 # Claude Code 本機設定（preview 啟動設定等）
 .claude/
+
+# 本機設定與密鑰（絕不進版控）
+backend/src/main/resources/application-local.properties
+.env
+.env.local
