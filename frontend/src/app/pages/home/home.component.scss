@@ -1,0 +1,78 @@
+/* 整張卡片可點：游標、hover 浮起、focus 可見外框。
+   縮放刻意小（1.02）—— 卡片是玻璃的，放大時背景模糊層跟著位移，
+   幅度大會出現「內容在底圖上滑動」的違和感。 */
+.survey-card {
+  cursor: pointer;
+  overflow: hidden;
+  /* 自成一個堆疊脈絡，::after 的 z-index 才不會跟頁面其他東西比高低 */
+  isolation: isolate;
+  transition:
+    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* hover 底色：整片一起淡入，不做由左至右的揭開。
+     底色仍是半透明 + backdrop blur，所以維持玻璃質感。
+     ::before 已經被 .mat-mdc-card 的漸層光邊佔走，所以這裡用 ::after。 */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    background: var(--card-hover-bg);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    box-shadow: inset 0 1px 0 0 var(--glass-highlight);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+  }
+
+  /* 內容要壓在那層底色之上，否則會被整片蓋掉 */
+  mat-card-header,
+  mat-card-content,
+  .survey-card__hint {
+    position: relative;
+    z-index: 1;
+  }
+
+  &:hover,
+  &:focus-visible {
+    transform: translateY(-6px) scale(1.02);
+    box-shadow:
+      0 22px 60px -14px var(--glass-glow),
+      inset 0 1px 0 0 var(--glass-highlight);
+  }
+
+  &:hover::after,
+  &:focus-visible::after {
+    opacity: 1;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 3px;
+  }
+}
+
+/* 只是一行說明字，hover 的表現交給整張卡的底色 */
+.survey-card__hint {
+  padding: 0 1rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted-c);
+
+  mat-icon {
+    font-size: 1.15rem;
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .survey-card,
+  .survey-card::after {
+    transition: none;
+  }
+}

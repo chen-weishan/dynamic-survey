@@ -6,8 +6,8 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- 字體與圖示改為本地載入（@fontsource，見 angular.json styles）。
+       原本這裡是 Google Fonts CDN，離線或網路不穩時所有 mat-icon 會 fallback 成文字、版面全爆。 -->
 </head>
 <body class="mat-typography">
   <app-root></app-root>

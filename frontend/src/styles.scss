@@ -1,35 +1,613 @@
 @use '@angular/material' as mat;
 
+@tailwind base;
+
 html {
-  @include mat.theme((color: (theme-type: light,
-        primary: mat.$cyan-palette,
-        tertiary: mat.$orange-palette,
+  @include mat.theme((color: (theme-type: color-scheme,
+        primary: mat.$violet-palette,
+        tertiary: mat.$rose-palette,
       ),
-      typography: Roboto,
+      /* 用 variable font（wght 軸連續）而非靜態字重檔：
+         .word 那組 hover 效果要在 200 → 800 之間「動畫」字重，
+         靜態字重只能在載入的離散檔案之間硬跳。 */
+      typography: (plain-family: ('Inter Variable', 'Noto Sans TC Variable', sans-serif),
+        brand-family: ('Inter Variable', 'Noto Sans TC Variable', sans-serif),
+      ),
       density: 0,
     ));
 }
 
+/* min-height 而非 height：body 若被鎖成剛好一個視窗高，
+   navbar 的 position: sticky 就只能在那一個視窗的範圍內吸頂
+   （sticky 只能待在自己的容器裡，容器只有 100vh 高就跟著滾走），
+   捲過第一屏之後 navbar 會被留在頁面上方。 */
 html,
 body {
-  height: 100%;
+  min-height: 100%;
+}
+
+/* 深淺色的唯一開關：html 上的 .dark class。
+   同時驅動三套系統 —— Material 的 light-dark()（靠 color-scheme）、
+   Tailwind 的 dark: 前綴（darkMode: 'class'）、以及下方自訂的 glass token。
+   原本這裡是 `body { color-scheme: light; ... !important }` 硬鎖亮色，已移除。 */
+html {
+  color-scheme: light;
+
+  /* 投影機優先：demo 距離遠、投影會模糊，全站 rem 基準放大 12.5%（16px → 18px）。
+     改回螢幕版時把這行拿掉即可。 */
+  font-size: 18px;
+}
+
+html.dark {
+  color-scheme: dark;
 }
 
 body {
-  color-scheme: light;
-  /* 強制亮色，避免系統深色模式造成文字反白 */
-  background-color: var(--bg-beige) !important;
-  color: #333333 !important;
-
-  /* 以下為 scaffold 原有設定，保留 */
   margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-family: 'Inter Variable', 'Noto Sans TC Variable', sans-serif;
+  background-color: var(--bg-beige);
+  color: var(--text-primary);
+  /* 刻意不加 background-color 的 transition：::view-transition-new(root) 是 live 內容，
+     CSS transition 會和圓形揭露的 clip-path 動畫同時跑、互相打架。
+     切換的視覺完全交給 ThemeService 的 View Transition 負責。 */
 }
 
-/* 以下為新增：自訂色票變數，供全站頁面用 var(--primary-color) 取用 */
+/* ===== View Transitions =====
+   只用於深淺色切換的圓形揭露，路由切換刻意不做過場
+   （頁面之間跳轉時的整頁動畫會拖慢節奏，而卡片 stagger 進場已經提供足夠的動態感）。
+
+   預設的 cross-fade 全部關掉，改由 ThemeService 用 clip-path
+   讓新配色從按鈕位置擴散，舊畫面壓在下層當底。 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
+}
+
+/* @fontsource 的 material-icons 只提供 @font-face，不像 Google CDN 那份有附 ligature class。
+   本專案所有 mat-icon 都是 ligature 模式（<mat-icon>menu</mat-icon>），
+   少了這組設定圖示會直接顯示成 "menu" 這類英文字、版面全爆。
+   .mat-ligature-font 是 Angular Material 給 MatIcon 的預設 font set class。 */
+.material-icons,
+.mat-ligature-font {
+  font-family: 'Material Icons';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 數字對齊：統計頁的數值用等寬數字才不會跳動 */
+.tabular-nums,
+.mat-mdc-table {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 全站色票與 glass token。
+   --primary-color 與 --bg-beige 是既有 12 個頁面已在用的變數名，
+   刻意保留名稱（--bg-beige 現在已不是米色，但改名要動 12 頁 template，不值得），
+   只換值 —— 因此在 .dark 下覆寫這兩個變數，既有頁面就自動支援深色模式。
+
+   所有數值走「投影機優先」：飽和度、邊框 opacity、高光都比螢幕上好看的值再高一階，
+   因為投影機會吃掉飽和度、且低對比細節在投影上會整片消失。
+   要改回細緻的螢幕版時，主要就是把 border/highlight 的 opacity 調低、blur 調大。 */
 html {
-  --primary-color: #8D6E63;
-  --bg-beige: #F5F1EE;
+  --primary-color: #5B3FD9;
+  --bg-beige: #F2F0FC;
+  --text-primary: #1A1533;
+  --text-muted-c: #5A5480;
+
+  /* Level 1 玻璃表面。
+     邊框刻意用「有色」而非白色：白邊框畫在近白的背景上等於看不見，
+     淺色模式的玻璃感就整個消失（深色模式的紫邊在暗底上才可見）。
+     底色帶一點紫調，讓它和純白的頁面元素區分開。 */
+  --glass-bg: rgba(252, 250, 255, 0.55);
+  --glass-bg-strong: rgba(253, 252, 255, 0.82);
+  --glass-border: rgba(124, 88, 232, 0.30);
+  --glass-border-shade: rgba(91, 63, 217, 0.22);
+  --glass-highlight: rgba(255, 255, 255, 0.98);
+  --glass-shadow: 0 12px 44px -10px rgba(49, 34, 140, 0.36);
+  --glass-glow: rgba(139, 92, 246, 0.40);
+  --glass-blur: 20px;
+  --glass-saturate: 175%;
+
+  /* 動畫漸層背景的色塊 */
+  --grad-1: #8B5CF6;
+  --grad-2: #38BDF8;
+  --grad-3: #FB7185;
+  /* 背景刻意退到配角：原本 0.55 太搶戲，形成「艷麗背景 + 白盒子」，
+     而且背景越艷、卡片就必須越不透明才讀得到字，玻璃的通透感就消失。
+     降背景飽和讓卡片能更透，兩件事一起改善。 */
+  --grad-opacity: 0.30;
+  /* 中央柔化遮罩：讓內容區後方乾淨、色彩退到畫面邊緣。
+     0.58 太強，會把內容區壓成近白、玻璃透出來的也是白色，通透感消失。 */
+  --veil-color: rgba(255, 255, 255, 0.40);
+
+  /* 玻璃 CTA。底色刻意保留在 0.78 —— 再透就會在投影機上消失 */
+  --btn-glass-bg: rgba(91, 63, 217, 0.78);
+  --btn-glass-text: #FFFFFF;
+  --btn-glass-border: rgba(255, 255, 255, 0.55);
+
+  /* .word hover 的強調色。紫底配琥珀是互補色關係，
+     在整站都是紫的畫面裡是唯一不會被吃掉的高亮色。 */
+  --amber: #B45309;
+
+  /* 首頁問卷卡 hover 的底色。取自背景 aurora 的粉色帶（--grad-3 那顆 blob），
+     刻意壓得很淡：底色只是「這張卡被指到了」的提示，文字維持原本的深色，
+     深色文字配淺粉底的對比比反白更好讀。 */
+  --card-hover-bg: rgba(253, 214, 232, 0.62);
+
+  /* navbar 的邊框單獨開 token：淺色模式維持 2px 有色邊（近白背景上細邊會消失），
+     深色模式改細且深（見 html.dark 覆寫）。 */
+  --navbar-border-width: 2px;
+  --navbar-border-color: var(--glass-border);
+}
+
+html.dark {
+  --primary-color: #A78BFA;
+  --bg-beige: #0D0A1F;
+  --text-primary: #EDE9FE;
+  --text-muted-c: #A5A0C7;
+
+  /* 深色模式的光暈刻意開得比「正常」更強：投影機會把亮部吃掉一截 */
+  --glass-bg: rgba(45, 35, 95, 0.48);
+  --glass-bg-strong: rgba(45, 35, 95, 0.74);
+  --glass-border: rgba(167, 139, 250, 0.60);
+  --glass-border-shade: rgba(0, 0, 0, 0.45);
+  --glass-highlight: rgba(196, 181, 253, 0.65);
+  --glass-shadow: 0 10px 44px -6px rgba(0, 0, 0, 0.65);
+  --glass-glow: rgba(167, 139, 250, 0.55);
+  --glass-blur: 22px;
+  --glass-saturate: 160%;
+
+  --grad-1: #7C3AED;
+  --grad-2: #0EA5E9;
+  --grad-3: #E11D48;
+  --grad-opacity: 0.42;
+  --veil-color: rgba(13, 10, 31, 0.62);
+
+  /* 深色模式的 CTA：亮紫半透明底 + 近白文字，底色比淺色模式更透
+     （暗底上的亮色本來就更跳，不需要那麼實） */
+  --btn-glass-bg: rgba(139, 92, 246, 0.46);
+  --btn-glass-text: #F5F3FF;
+  --btn-glass-border: rgba(196, 181, 253, 0.60);
+
+  --amber: #FBBF24;
+
+  /* 深色模式不能用淺粉（會把整張卡打亮、淺色文字直接消失），
+     改用同色相但壓暗的玫瑰紫，文字維持原本的淺色。 */
+  --card-hover-bg: rgba(131, 61, 105, 0.42);
+
+  /* 深色模式的 navbar 邊框：亮紫 2px 在暗底上是一條發光的粗線、太搶戲。
+     改成 1px 且壓深，只剩「有個邊界」的暗示。 */
+  --navbar-border-width: 1px;
+  --navbar-border-color: rgba(76, 52, 138, 0.85);
+}
+
+/* ===== Level 1 玻璃表面 =====
+
+   分三級，差別在效能成本而非只是視覺強度：
+
+   .glass        完整版：backdrop-filter + 漸層光邊。每個實例是獨立的 GPU 合成層，
+                 只用在「大面積、數量少」的表面（表單卡、dialog、圖表卡、外層容器）。
+   .glass-lite   無 backdrop-filter，只有半透明底 + 光邊 + 高光。
+                 用在數量多又會滾動的元素（列表每一列）——那是掉幀最經典的組合。
+                 投影機的模糊本來就吃掉大半 backdrop 模糊效果，兩者在投影上差異很小。
+   .glass-strong 更不透明，用在需要高可讀性的地方（輸入表單、填答頁的問題卡）。
+
+   邊緣光線用漸層邊框 + inset 高光「假裝」折射：
+   真折射（SVG feDisplacementMap）位移只有幾個 pixel，投影機上看不出來，
+   已排除在今天範圍外。 */
+
+%glass-base {
+  position: relative;
+  border-radius: 1.5rem;
+  background: var(--glass-bg);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight);
+}
+
+/* 漸層光邊：用 mask 把中間挖空，只留 2px 的環。
+   刻意用 2px 而非 1px —— 髮絲邊框在投影機上會直接消失。 */
+%glass-edge {
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 2px;
+    border-radius: inherit;
+    background: linear-gradient(140deg,
+        var(--glass-highlight) 0%,
+        transparent 38%,
+        transparent 62%,
+        var(--glass-glow) 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+.glass {
+  @extend %glass-base;
+  @extend %glass-edge;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+.glass-lite {
+  @extend %glass-base;
+  @extend %glass-edge;
+}
+
+.glass-strong {
+  @extend %glass-base;
+  @extend %glass-edge;
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+/* ===== 互動 utility =====
+
+   三組共用的 hover 效果，跨頁面共用所以放全域。 */
+
+/* .word —— 取代「藍字加底線」的連結樣式。
+   字重與字距一起動：細 + 鬆 → 粗 + 緊，游標移上去時字「長胖收緊」。
+   依賴 variable font 的 wght 軸（見上方 angular.json 換成 @fontsource-variable）。 */
+.word {
+  display: inline-block;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 200;
+  letter-spacing: .04em;
+  cursor: pointer;
+  transition:
+    font-weight .55s cubic-bezier(0.16, 1, 0.3, 1),
+    letter-spacing .55s cubic-bezier(0.16, 1, 0.3, 1),
+    color .55s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover {
+    font-weight: 800;
+    letter-spacing: -.02em;
+    color: var(--amber);
+  }
+}
+
+/* 字重變化會改變行寬、把同列其他欄位推來推去。
+   用一份 800 字重的隱形副本把寬度先撐到最寬狀態，佈局就不會跳。 */
+.word-slot {
+  display: inline-grid;
+
+  >* {
+    grid-area: 1 / 1;
+  }
+
+  &::after {
+    content: attr(data-word);
+    grid-area: 1 / 1;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+/* .word 停用態（不可點的「前往」）：保留字重不做 hover */
+.word--muted {
+  color: var(--text-muted-c);
+  cursor: default;
+  font-weight: 200;
+
+  &:hover {
+    font-weight: 200;
+    letter-spacing: .04em;
+    color: var(--text-muted-c);
+  }
+}
+
+/* .wipe / .over —— 兩層文字疊在一起，上層用 clip-path 由左往右揭開。
+   .over 必須和底層完全等寬等位，所以兩層都放在同一個 grid 格。 */
+.wipe {
+  display: inline-grid;
+
+  >* {
+    grid-area: 1 / 1;
+  }
+}
+
+.over {
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--amber);
+  pointer-events: none;
+}
+
+/* 觸發者是整張卡（.wipe-host），不是文字本身 ——
+   使用者的游標多半落在卡片其他地方。 */
+.wipe-host:hover .over,
+.wipe:hover .over {
+  clip-path: inset(0 0 0 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .word,
+  .over {
+    transition: none;
+  }
+}
+
+/* ===== Material 元件玻璃化 =====
+
+   全域覆寫，12 個頁面的 template 一行都不用改。
+   優先用 Material 的 --mdc-* / --mat-* token（比 !important 乾淨），
+   token 蓋不到的（backdrop-filter、漸層光邊）才補寫屬性。 */
+
+.mat-mdc-card {
+  --mdc-elevated-card-container-color: var(--glass-bg);
+  --mdc-outlined-card-container-color: var(--glass-bg);
+  --mdc-elevated-card-container-shape: 1.5rem;
+  --mdc-outlined-card-container-shape: 1.5rem;
+
+  /* 陰影必須從 elevation token 餵進去，不能直接寫 box-shadow：
+     mdc 內部規則的 specificity 比 .mat-mdc-card 高，會蓋掉外部宣告
+     （實測 computed 會變回 Material 預設 elevation，inset 高光整個消失）。 */
+  --mdc-elevated-card-container-elevation: var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight);
+
+  position: relative;
+  border-radius: 1.5rem;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 2px;
+    border-radius: inherit;
+    background: linear-gradient(140deg,
+        var(--glass-highlight) 0%,
+        transparent 38%,
+        transparent 62%,
+        var(--glass-glow) 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+/* Dialog 天生浮在內容之上，玻璃語意最自然，且數量恆為 1 */
+.mat-mdc-dialog-surface {
+  --mdc-dialog-container-color: var(--glass-bg-strong);
+  --mdc-dialog-container-shape: 1.5rem;
+
+  box-shadow: var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight) !important;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+}
+
+/* Datepicker 面板：和 dialog 同級 —— 浮在內容之上、數量恆為 1，玻璃語意最自然。
+   原本是 Material 預設的實心 surface，在玻璃頁面上是唯一一塊不透明的白/黑方塊。
+   底色必須用 --glass-bg-strong：日期格子是密集小字，底太透就讀不到。 */
+.mat-datepicker-content {
+  --mat-datepicker-calendar-container-background-color: var(--glass-bg-strong);
+  --mat-datepicker-calendar-container-text-color: var(--text-primary);
+  --mat-datepicker-calendar-container-shape: 1.25rem;
+  --mat-datepicker-calendar-date-text-color: var(--text-primary);
+  --mat-datepicker-calendar-body-label-text-color: var(--text-muted-c);
+  --mat-datepicker-calendar-period-button-text-color: var(--text-primary);
+  --mat-datepicker-calendar-navigation-button-icon-color: var(--text-primary);
+  --mat-datepicker-calendar-header-text-color: var(--text-muted-c);
+  --mat-datepicker-calendar-date-selected-state-background-color: var(--primary-color);
+  --mat-datepicker-calendar-date-today-outline-color: var(--primary-color);
+
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1.5px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight) !important;
+}
+
+/* 輸入框給自己的半透明底與較強邊框：
+   投影機上若讓它直接透出卡片背景，欄位邊界會看不出來。 */
+.mat-mdc-form-field {
+  --mdc-outlined-text-field-outline-color: var(--glass-border-shade);
+  --mdc-outlined-text-field-hover-outline-color: var(--primary-color);
+  --mdc-outlined-text-field-focus-outline-color: var(--primary-color);
+  --mdc-outlined-text-field-container-shape: 0.9rem;
+  --mdc-outlined-text-field-outline-width: 1.5px;
+  --mdc-outlined-text-field-focus-outline-width: 2.5px;
+
+  .mat-mdc-text-field-wrapper {
+    background: var(--glass-bg-strong);
+    border-radius: 0.9rem;
+  }
+}
+
+/* 查詢列（問卷查詢 / 問卷管理）：模糊查詢、起訖日期、搜尋按鈕上下置中。
+
+   mat-form-field 預設在下方保留一塊 subscript（放 hint / error）的高度，
+   欄位的視覺中線因此比按鈕高一截 —— 這一列不需要 hint，直接收掉，
+   容器的 align-items: center 才會真的把四個元件對齊。 */
+.filter-bar {
+  .mat-mdc-form-field-subscript-wrapper {
+    display: none;
+  }
+
+  .mat-mdc-form-field {
+    margin-bottom: 0;
+  }
+}
+
+/* 可排序表頭。
+
+   刻意不用 matSort：matSort 綁的是 MatTableDataSource，而這兩張表是自己做
+   前端分頁（dataSource 直接吃切好的陣列），接上去會變成「只排序目前這一頁」。
+   排序邏輯留在元件裡（見 sortSurveys），這裡只負責外觀。 */
+.sort-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-weight: inherit;
+  color: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 200ms ease;
+
+  &:hover {
+    color: var(--primary-color);
+  }
+
+  .sort-head__icon {
+    font-size: 1.05rem;
+    width: 1.05rem;
+    height: 1.05rem;
+    /* 未排序時淡化，只留「這欄可以排」的暗示，不跟欄位名稱搶注意力 */
+    opacity: 0.35;
+    transition: opacity 200ms ease;
+  }
+
+  &:hover .sort-head__icon {
+    opacity: 0.7;
+  }
+}
+
+.sort-head.is-sorted {
+  color: var(--primary-color);
+
+  .sort-head__icon {
+    opacity: 1;
+  }
+}
+
+/* Toolbar：navbar 重做前先讓它有玻璃底，
+   這樣即使 navbar 那步沒做完，全站頂部風格也是一致的。 */
+mat-toolbar.mat-toolbar {
+  background: var(--glass-bg-strong);
+  color: var(--text-primary);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-bottom: 2px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* 表格：統計頁與紀錄頁用，讓它的底透出玻璃而不是實心白 */
+.mat-mdc-table {
+  background: transparent;
+
+  .mat-mdc-header-row,
+  .mat-mdc-row {
+    background: transparent;
+  }
+}
+
+.mat-mdc-raised-button,
+.mat-mdc-unelevated-button,
+.mat-mdc-outlined-button,
+.mat-mdc-button {
+  --mdc-filled-button-container-shape: 0.85rem;
+  --mdc-protected-button-container-shape: 0.85rem;
+  --mdc-outlined-button-container-shape: 0.85rem;
+  --mdc-text-button-container-shape: 0.85rem;
+  font-weight: 600;
+}
+
+/* 實心 CTA（建立新問卷、搜尋…）改為玻璃按鈕。
+   關鍵是「半透明但不透明」：--btn-glass-bg 保留 0.78/0.46 的底色，
+   全透明的玻璃按鈕在投影機上會直接消失，CTA 就不再是 CTA。
+   背景與文字色都必須餵 token —— 直接寫 background 會被 mdc 內部規則蓋掉。 */
+.mat-mdc-raised-button:not(:disabled),
+.mat-mdc-unelevated-button:not(:disabled) {
+  --mdc-protected-button-container-color: var(--btn-glass-bg);
+  --mdc-filled-button-container-color: var(--btn-glass-bg);
+  --mdc-protected-button-label-text-color: var(--btn-glass-text);
+  --mdc-filled-button-label-text-color: var(--btn-glass-text);
+  --mdc-protected-button-container-elevation: var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight);
+
+  border: 2px solid var(--btn-glass-border);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  transition: transform 250ms ease, box-shadow 250ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+/* Outlined / text button（新增選項、取消…）也給玻璃底。
+   這類按鈕原本是完全透明的，在玻璃卡片上會看不出可點擊範圍。 */
+.mat-mdc-outlined-button:not(:disabled),
+.mat-mdc-button:not(:disabled) {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+  box-shadow: inset 0 1px 0 0 var(--glass-highlight);
+  transition: transform 250ms ease, background-color 250ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.mat-mdc-outlined-button:not(:disabled) {
+  --mdc-outlined-button-outline-color: var(--glass-border);
+  --mdc-outlined-button-label-text-color: var(--primary-color);
+}
+
+/* ===== 進場動畫 =====
+   卡片與玻璃容器由下浮起，依序 stagger。
+   位移 24px、550ms：投影機上快而小的動畫會拖影變糊、觀眾根本沒看到。 */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+.app-main .mat-mdc-card,
+.app-main .bg-white {
+  animation: rise-in 550ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* stagger 寫死 8 階就夠 —— 這些容器在各頁面都是同一個父的兄弟節點。
+   用 nth-child 而非 nth-of-type：容器多是 div，按類型計數反而不準。 */
+@for $i from 1 through 8 {
+
+  .app-main .mat-mdc-card:nth-child(#{$i}),
+  .app-main .bg-white:nth-child(#{$i}) {
+    animation-delay: #{($i - 1) * 70}ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .app-main .mat-mdc-card,
+  .app-main .bg-white {
+    animation: none;
+  }
 }
 
 /* 修正 Angular Material 表單外框的細節 */
@@ -357,12 +935,130 @@ html {
   color: #616161;
 }
 
-html,
-body {
-  height: 100%;
+/* 註：檔案尾端原本重複貼了一份 `html,body { height:100% }` 與
+   `body { margin:0; font-family:Roboto }`（與第 15–29 行重複），
+   後者會覆蓋掉上方的字體設定，已移除。 */
+
+/* Tailwind utilities 放在最後，撞號時由 Tailwind 勝出。
+   已比對上方手寫 utility 的數值（gap/padding/字級/圓角）與 Tailwind v3 完全一致，
+   因此覆蓋不會造成任何版面位移；而 `.flex-grow`、`.card-grid`、`.badge` 等
+   Tailwind 沒有的自訂語意 class 仍由上方定義提供。 */
+@tailwind components;
+@tailwind utilities;
+
+/* ===== 深淺色適配層（必須放在 @tailwind utilities 之後才能勝出）=====
+
+   背景：template 原本就照 Tailwind 的寫法寫了顏色 class（bg-white、
+   text-gray-800、text-indigo-600…），但專案一直沒裝 Tailwind，
+   那些 class 全是死的。裝上 Tailwind 後它們一次全部活了，
+   而它們全是為「淺色底」寫死的，深色模式下會出現白底淺字、
+   深灰字配深底這類完全不可讀的組合。
+   styles.scss 既有的手寫語意色（.text-success #2e7d32、.text-link #1976d2…）
+   同樣是硬編淺色底的值。這一層把兩批都重新映射到 glass token。 */
+
+/* 表格背景必須餵 token。直接寫 background 會被 Material 的 component style
+   蓋回 --mat-sys-surface（深色模式 ≈ #151316），那塊近黑會蓋在容器之上，
+   玻璃感整個消失（已實測，就是深色模式下表格變成一塊實心黑的原因）。 */
+.mat-mdc-table {
+  --mat-table-background-color: transparent;
 }
 
-body {
-  margin: 0;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+/* Paginator 有自己的容器底色 token，不跟著 table 走 ——
+   深色模式下它會是一塊獨立的近黑色橫條黏在表格下緣。 */
+.mat-mdc-paginator {
+  --mat-paginator-container-background-color: transparent;
+  --mat-paginator-container-text-color: var(--text-primary);
+  background: transparent;
+}
+
+/* Chip 的文字色設在內部的 .mdc-evolution-chip__text-label 上，
+   template 寫的 !text-green-700 / !text-blue-700 / !text-red-700 是套在 host，
+   會被子元素自己的 color 蓋掉 —— 深色模式下就變成淺底配淺字、讀不到。
+   讓 label 繼承 host 的 color，一次修好三種狀態色。 */
+.mat-mdc-standard-chip {
+  --mdc-chip-container-shape-radius: 0.7rem;
+
+  .mdc-evolution-chip__text-label {
+    color: inherit !important;
+    font-weight: 600;
+  }
+}
+
+/* .bg-white 與 .bg-subtle 是各頁面實際在用的卡片容器
+   （那些頁面沒用 mat-card；問卷編輯器的題目卡就是 .bg-subtle）。
+   兩個模式都改成玻璃：深色模式修可讀性，
+   淺色模式解決「實心白/灰盒子完全沒有玻璃感」的問題 ——
+   .bg-subtle 原本是硬編的 #f5f5f5 實心淺灰。
+
+   刻意不加 backdrop-filter：其中 survey-stats 那處是多實例的統計項，
+   而 aurora 背景本身已 blur(80px)，透過半透明表面看到的已經是柔化色塊，
+   再疊一層模糊的邊際價值很低，效能成本卻是實在的。 */
+.bg-white,
+.bg-subtle {
+  background-color: var(--glass-bg) !important;
+  border-radius: 1rem;
+  border-color: var(--glass-border) !important;
+  box-shadow: var(--glass-shadow), inset 0 1px 0 0 var(--glass-highlight) !important;
+}
+
+html.dark {
+  /* Tailwind 灰階文字 */
+  .text-gray-800,
+  .text-gray-700,
+  .text-gray-600 {
+    color: var(--text-primary) !important;
+  }
+
+  .text-gray-500,
+  .text-gray-400 {
+    color: var(--text-muted-c) !important;
+  }
+
+  /* Tailwind indigo 文字：深色底需要亮紫才讀得到 */
+  .text-indigo-900,
+  .text-indigo-800,
+  .text-indigo-700,
+  .text-indigo-600 {
+    color: var(--primary-color) !important;
+  }
+
+  /* Tailwind 淺色底與淺色邊框 */
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-indigo-50,
+  .bg-indigo-100 {
+    background-color: rgba(167, 139, 250, 0.12) !important;
+  }
+
+  .border-gray-200,
+  .border-indigo-100 {
+    border-color: var(--glass-border-shade) !important;
+  }
+
+  .border-indigo-500 {
+    border-color: var(--primary-color) !important;
+  }
+
+  /* styles.scss 既有的手寫語意色 */
+  .text-success {
+    color: #6EE7A8 !important;
+  }
+
+  .text-danger {
+    color: #FF8A8A !important;
+  }
+
+  .text-link {
+    color: #7DD3FC !important;
+  }
+
+  .text-muted {
+    color: var(--text-muted-c) !important;
+  }
+
+  /* .bg-subtle 的深淺色已由上面的玻璃 token 統一處理，這裡不再覆寫 */
+
+  .bg-accent-tint {
+    background-color: rgba(167, 139, 250, 0.16) !important;
+  }
 }

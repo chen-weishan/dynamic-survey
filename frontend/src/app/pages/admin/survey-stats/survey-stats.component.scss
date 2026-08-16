@@ -1,0 +1,199 @@
+/* ===== 統計頁版面 =====
+
+   原本的問題：mat-card-title 直接吃 Material 預設樣式（沒有內距、長標題貼齊卡片邊緣），
+   圖表維持長寬比又被 legend 推高，於是「一大片空白 + 數字貼在卡片邊緣」。
+   這裡把卡片重新切成 head / body 兩塊，圖表交給固定高度的容器。 */
+
+.stats-page {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.stats-head {
+  padding: 0 0.25rem;
+}
+
+.stat-card {
+  padding: 1.5rem;
+  overflow: hidden;
+}
+
+.stat-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.stat-card__title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--text-primary);
+  /* 長標題要換行而不是把切換器擠出卡片 */
+  flex: 1 1 16rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.stat-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ===== 呈現方式切換 ===== */
+
+.kind-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 4px;
+  border-radius: 1rem;
+  background: var(--glass-bg);
+  border: 1.5px solid var(--glass-border);
+}
+
+.kind-switch__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  border: none;
+  border-radius: 0.75rem;
+  background: transparent;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted-c);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 250ms ease, color 250ms ease;
+
+  mat-icon {
+    font-size: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  &:hover {
+    color: var(--text-primary);
+    background: var(--glass-bg-strong);
+  }
+}
+
+.kind-switch__btn.is-active {
+  background: var(--btn-glass-bg);
+  color: var(--btn-glass-text);
+  box-shadow: inset 0 1px 0 0 var(--glass-highlight);
+}
+
+/* 螢幕窄的時候只留圖示，文字標籤收掉 —— 四顆按鈕帶文字會換兩行 */
+@media (max-width: 40rem) {
+  .kind-switch__label {
+    display: none;
+  }
+}
+
+/* ===== 圖表 ===== */
+
+.chart-box {
+  position: relative;
+  width: 100%;
+  height: 20rem;
+}
+
+/* ===== 明細列表 =====
+
+   五欄 grid：色點 / 選項文字 / 人數 / 百分比 / 進度條。
+   選項文字那欄用 minmax(0, 1fr)，長字串才會換行而不是把數字推出卡片。 */
+
+.tally {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.tally__row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 3.5rem 4rem;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.25rem;
+  border-bottom: 1px solid var(--glass-border-shade);
+}
+
+.tally__dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 999px;
+}
+
+.tally__label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-primary);
+}
+
+.tally__count,
+.tally__pct {
+  text-align: right;
+  font-weight: 600;
+}
+
+.tally__pct {
+  color: var(--primary-color);
+}
+
+.tally__bar {
+  grid-column: 2 / -1;
+  display: block;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: var(--glass-border-shade);
+  overflow: hidden;
+}
+
+.tally__bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 600ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ===== 文字題作答 ===== */
+
+.answers--list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.answers--cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.75rem;
+}
+
+.answer {
+  padding: 0.85rem 1rem;
+  border-radius: 0.9rem;
+  background: var(--glass-bg);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .kind-switch__btn,
+  .tally__bar-fill {
+    transition: none;
+  }
+}

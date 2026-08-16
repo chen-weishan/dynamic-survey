@@ -1,47 +1,80 @@
 <div class="p-6 max-w-5xl mx-auto">
   <h1 class="text-2xl font-bold text-gray-800 mb-6">問卷查詢</h1>
+  <!-- filter-bar：四個欄位（含按鈕）用 align-items:center 對齊，
+       mat-form-field 的 subscript 高度在全域樣式裡收掉，否則按鈕會偏上。 -->
   <div
-    class="flex flex-wrap items-end gap-4 mb-4 bg-white p-4 rounded-lg shadow"
+    class="filter-bar flex flex-wrap items-center gap-4 mb-4 bg-white p-4 rounded-lg shadow"
   >
     <mat-form-field appearance="outline" class="flex-1 min-w-[200px]">
       <mat-label>問卷名稱</mat-label>
-      <input matInput [(ngModel)]="titleFilter" placeholder="模糊搜尋" />
+      <input
+        matInput
+        [(ngModel)]="titleFilter"
+        placeholder="模糊搜尋"
+        (keyup.enter)="onSearch()"
+      />
     </mat-form-field>
+
+    <!-- 日期改用 matDatepicker：和問卷編輯器 STEP 0 同一種選單，
+         原本的 <input type="date"> 是瀏覽器原生 UI，套不上玻璃樣式。 -->
     <mat-form-field appearance="outline">
       <mat-label>統計時間 (開始)</mat-label>
-      <input matInput type="date" [(ngModel)]="startDateFilter" />
+      <input matInput [matDatepicker]="startPicker" [(ngModel)]="startDate" />
+      <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+      <mat-datepicker #startPicker></mat-datepicker>
     </mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label>統計時間 (結束)</mat-label>
-      <input matInput type="date" [(ngModel)]="endDateFilter" />
+      <input matInput [matDatepicker]="endPicker" [(ngModel)]="endDate" />
+      <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+      <mat-datepicker #endPicker></mat-datepicker>
     </mat-form-field>
-    <button mat-raised-button color="primary" (click)="onSearch()" class="mb-5">
+    <button mat-raised-button color="primary" (click)="onSearch()">
       搜尋
     </button>
+    <button mat-stroked-button (click)="onClear()">清除條件</button>
   </div>
   <div class="bg-white rounded-lg shadow overflow-hidden">
     <table mat-table [dataSource]="pagedSurveys()" class="w-full">
       <ng-container matColumnDef="id">
-        <th mat-header-cell *matHeaderCellDef>編號</th>
+        <th mat-header-cell *matHeaderCellDef>
+          <button type="button" class="sort-head" (click)="toggleSort('id')"
+            [class.is-sorted]="sortKey() === 'id'">
+            <span>編號</span>
+            <mat-icon class="sort-head__icon">{{ sortIcon('id') }}</mat-icon>
+          </button>
+        </th>
         <td mat-cell *matCellDef="let s">#{{ s.id }}</td>
       </ng-container>
 
       <ng-container matColumnDef="title">
-        <th mat-header-cell *matHeaderCellDef>名稱</th>
-        <td mat-cell *matCellDef="let s" class="font-medium">
-          @if (canFill(s)) {
-            <a
-              [routerLink]="['/fill', s.id]"
-              class="text-indigo-600 hover:underline"
-              >{{ s.title }}</a
-            >
-          } @else {
-            {{ s.title }}
-          }
+        <th mat-header-cell *matHeaderCellDef>
+          <button type="button" class="sort-head" (click)="toggleSort('title')"
+            [class.is-sorted]="sortKey() === 'title'">
+            <span>名稱</span>
+            <mat-icon class="sort-head__icon">{{ sortIcon('title') }}</mat-icon>
+          </button>
+        </th>
+        <td mat-cell *matCellDef="let s">
+          <!-- word-slot 用一份 800 字重的隱形副本先撐好寬度，
+               hover 時字變粗才不會把整列往右推。 -->
+          <span class="word-slot" [attr.data-word]="s.title">
+            @if (canFill(s)) {
+              <a [routerLink]="['/fill', s.id]" class="word">{{ s.title }}</a>
+            } @else {
+              <span class="word word--muted">{{ s.title }}</span>
+            }
+          </span>
         </td>
       </ng-container>
       <ng-container matColumnDef="status">
-        <th mat-header-cell *matHeaderCellDef>狀態</th>
+        <th mat-header-cell *matHeaderCellDef>
+          <button type="button" class="sort-head" (click)="toggleSort('status')"
+            [class.is-sorted]="sortKey() === 'status'">
+            <span>狀態</span>
+            <mat-icon class="sort-head__icon">{{ sortIcon('status') }}</mat-icon>
+          </button>
+        </th>
         <td mat-cell *matCellDef="let s">
           @if (timeStatusOf(s) === "ONGOING") {
             <mat-chip class="!bg-green-100 !text-green-700">{{
@@ -59,7 +92,13 @@
         </td>
       </ng-container>
       <ng-container matColumnDef="period">
-        <th mat-header-cell *matHeaderCellDef>開始/結束時間</th>
+        <th mat-header-cell *matHeaderCellDef>
+          <button type="button" class="sort-head" (click)="toggleSort('period')"
+            [class.is-sorted]="sortKey() === 'period'">
+            <span>開始/結束時間</span>
+            <mat-icon class="sort-head__icon">{{ sortIcon('period') }}</mat-icon>
+          </button>
+        </th>
         <td mat-cell *matCellDef="let s" class="text-sm text-gray-500">
           {{ s.startDate }} ~ {{ s.endDate }}
         </td>
@@ -68,15 +107,13 @@
       <ng-container matColumnDef="result">
         <th mat-header-cell *matHeaderCellDef>結果</th>
         <td mat-cell *matCellDef="let s">
-          @if (canViewStats(s)) {
-            <a
-              [routerLink]="['/admin/stats', s.id]"
-              class="text-indigo-600 hover:underline"
-              >前往</a
-            >
-          } @else {
-            <span class="text-gray-400">前往</span>
-          }
+          <span class="word-slot" data-word="前往">
+            @if (canViewStats(s)) {
+              <a [routerLink]="['/admin/stats', s.id]" class="word">前往</a>
+            } @else {
+              <span class="word word--muted">前往</span>
+            }
+          </span>
         </td>
       </ng-container>
       <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>

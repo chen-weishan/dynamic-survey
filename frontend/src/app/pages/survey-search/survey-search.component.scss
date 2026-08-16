@@ -1,0 +1,30 @@
+/* 欄寬與內容脫鉤。
+
+   問卷名稱用的 .word 在 hover 時字重 200 → 800，欄寬若由內容決定，
+   最長的那筆（標題最長的問卷）一被 hover 就會把同列其他欄位推走 ——
+   症狀是「整列朝名稱欄集中」。table-layout: fixed 之後欄寬只看下面的百分比，
+   hover 再怎麼變粗都不會動到版面。 */
+table.mat-mdc-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.mat-column-id {
+  width: 8%;
+}
+
+.mat-column-title {
+  width: 34%;
+}
+
+.mat-column-status {
+  width: 14%;
+}
+
+.mat-column-period {
+  width: 30%;
+}
+
+.mat-column-result {
+  width: 14%;
+}

@@ -9,6 +9,9 @@ import { authInterceptor } from './interceptors/auth.interceptor';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
+    // 刻意不用 withViewTransitions()：頁面之間跳轉的整頁過場會拖慢節奏，
+    // 而且會和深淺色切換搶同一組 ::view-transition 偽元素。
+    // 換頁的動態感由卡片 stagger 進場提供（見 styles.scss 的 rise-in）。
     provideRouter(routes),
     provideAnimationsAsync(),
     provideHttpClient(

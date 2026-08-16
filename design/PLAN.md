@@ -79,6 +79,89 @@
 | 16 | 明天用 **production build**，非 dev server | dev server 無最佳化、帶 sourcemap，在 LG Gram 上明顯更慢。**測 dev server 等於沒測** |
 | 17 | 階段式推進，**每階段結束都是可 demo 的完整狀態** | 降級結果是「全站好看 + 前面幾個畫面驚人」，而非「三個好看 + 兩個舊 Material」。風格斷裂比平庸更傷 |
 
+## 執行中的發現與計畫修正
+
+### 修正 1：手寫 utility class 不刪（原計畫寫「全刪讓 Tailwind 接手」）
+
+`styles.scss` 共 397 行，82–387 行那套手寫 utility **混了兩類東西**：
+
+- 與 Tailwind 撞號的（`.flex`、`.gap-*`、`.p-*`、`.text-*`、`.rounded*`…）
+- Tailwind **沒有**的專案自訂語意 class（`.card-grid`、`.badge`、`.badge-success`、
+  `.text-danger`、`.text-muted`、`.min-h-form`、`.border-accent-l`、`.bg-accent-tint`…）
+
+全刪會讓 12 頁破版。且 `.flex-grow` 在 Tailwind v3 裡叫 `grow`（無 `flex-grow`），保留是必要的。
+
+**已逐項比對撞號 class 的數值，與 Tailwind v3 完全一致**（gap 0.25/0.5/0.75/1/1.25/1.5/2rem、
+padding 同、字級 .875/1.125/1.25/1.5rem、圓角 4/8/12px = 0.25/0.5/0.75rem）——
+原作者是照 Tailwind 數值手抄的。因此：
+
+> **保留整段不動，`@tailwind utilities` 放在檔案最後讓 Tailwind 勝出。數值相同 → 零版面位移風險。**
+
+已驗證：產出的 `styles.css` 裡 `.flex` 出現兩次且內容完全相同。
+
+### 修正 2：`theme-type: color-scheme` 可用，不需要產生兩套 token
+
+Angular Material 19.2 的 `mat.theme()` 接受 `theme-type: color-scheme`，
+產出 `--mat-sys-primary: light-dark(#7d00fa, #d5baff)` 這種形式，
+靠 `html` 的 `color-scheme` property 自動切換 → CSS 體積只需一套。已驗證生效。
+
+### 修正 3：字體設定被檔案尾端的重複定義覆蓋
+
+`styles.scss` 尾端（原 389–397 行）重複貼了一份 `html,body { height:100% }` 與
+`body { margin:0; font-family:Roboto }`，與檔案開頭的定義重複且在後面勝出，
+所以第一次改字體時 `body` 的 computed font 仍是 Roboto。已移除尾段那份。
+
+### 修正 4：`@fontsource/material-icons` 不含 ligature class
+
+Google CDN 那份 CSS 有附 `.material-icons` 的 ligature 設定，`@fontsource` 版**只有 `@font-face`**。
+本專案所有 icon 都是 ligature 模式（`<mat-icon>menu</mat-icon>`，已確認無 `svgIcon` 用法），
+少了那組設定圖示會全部顯示成英文字。已在 `styles.scss` 補上 `.material-icons, .mat-ligature-font`。
+
+### 修正 5（重要）：裝 Tailwind 讓一批「死 class」全部復活
+
+`template` 原本就照 Tailwind 的寫法寫了顏色 class —— `bg-white`(8)、`text-gray-500`(6)、
+`text-indigo-600`(3)、`text-gray-800`(3)、`bg-indigo-50`、`border-gray-200`、
+`!bg-green-100` 等，共 28 種、約 55 個使用點。但專案一直沒裝 Tailwind，
+**這些 class 全都是無效的死 class**。裝上 Tailwind 後它們一次全部生效，
+而它們全是為「淺色底」寫死的，深色模式下產生大量不可讀組合。
+
+實測到的具體災難：
+
+- `.bg-white` → 純白底 + 繼承的淺紫白文字 = 白底淺字。8 處頁面的卡片容器都是它
+  （那些頁面**沒有用 mat-card**，是 `<div class="bg-white rounded-lg shadow">`）
+- `.text-gray-800` → `rgb(31,41,55)` 深灰配深底
+- `.mat-mdc-table` 的 `background: transparent` 被 Material component style 蓋回
+  `--mat-sys-surface`（深色 ≈ `#151316`），那塊近黑蓋在容器上 —— 這就是深色模式下
+  表格變成一塊實心黑的原因
+
+一併發現 `styles.scss` 既有的手寫語意色也是硬編淺色底的值：
+`.text-success #2e7d32`、`.text-link #1976d2`、`.bg-subtle #f5f5f5`、`.bg-accent-tint #ede7f6`。
+
+**解法**：在 `@tailwind utilities` 之後加一層「深淺色適配層」，把兩批都重新映射到 glass token。
+`.bg-white` 在**兩個模式**都改成玻璃 —— 深色修可讀性，淺色順便解決通透感問題。
+
+**通用教訓（已重複踩到三次）**：覆寫 Angular Material 必須**餵 `--mdc-*` / `--mat-*` token**，
+不能直接寫屬性。mdc 內部規則的 specificity 高於 `.mat-mdc-*`，直接寫的屬性會被靜默蓋掉。
+已知踩點：card 的 `box-shadow`（inset 高光整個消失）、table 的 `background`。
+
+### 修正 6：背景飽和度是連鎖問題的源頭
+
+第一版 `--grad-opacity` 淺色 0.55 / 深色 0.75 太搶戲，畫面變成
+「艷麗漸層背景 + 白色/黑色盒子」，不是 rondesignlab 那種質感。
+
+關鍵因果：**背景越艷 → 卡片必須越不透明才讀得到字 → 卡片變成實心盒子 → 通透感消失。**
+所以降背景飽和不是「讓畫面變淡」，是**讓卡片能更透**，兩件事一起改善。
+
+已調整為 `--grad-opacity` 0.30 / 0.42、`--glass-bg` 淺色 0.52 / 深色 0.48，
+並在 aurora 加一層中央柔化遮罩（`.aurora__veil`，radial-gradient 中央濃邊緣透），
+讓內容區後方乾淨、色彩退到畫面邊緣 —— 同時解決「內容少的頁面下半部裸露大片飽和色塊」。
+
+### 高槓桿發現：既有頁面自動支援深色模式
+
+12 個既有頁面全都透過 `var(--primary-color)` 與 `var(--bg-beige)` 取色。
+因此**只要在 `html.dark` 下覆寫這兩個變數，12 頁就自動支援深色模式**，不需改任何 template。
+`--bg-beige` 的名稱現在語意已錯（不再是米色），但改名要動 12 頁，不值得——刻意保留名稱只換值。
+
 ## Level 1 玻璃化的套用範圍
 
 5 個 demo 畫面全部套用。填答頁採層次策略：
@@ -103,6 +186,36 @@
 
 合計約 9.5h vs 可用 7h。**每一步做完就 commit，做到哪算哪。**
 最可能被犧牲的是第 8、9 項的一部分；**第 10 項必須留住**。
+
+### 執行狀態（2026-08-11 17:20）
+
+工項 1–9 **全部完成**，實際耗時約 2h50m（原估 8.5h）。
+決策在 grilling 階段已全部釘死，執行階段沒有一次卡在「這裡要怎麼決定」。
+
+**剩下只有工項 10：在 LG Gram 上實測 production build。這項只有 Vincent 能做。**
+
+驗證分工（Claude 的 Browser pane 是隱藏狀態，隱藏頁面不 compositing frames，
+因此無法截圖、無法量 FPS、無法測滾動與互動，只剩 computed style 一種手段）：
+
+- Claude：computed style、CSS 優先權診斷、編譯錯誤、DOM 結構
+- Vincent：真實瀏覽器截圖 → Claude 依截圖診斷並修
+
+實測這個分工比 Claude 自己截圖更有效（真實 DPR、有登入狀態、有真實資料，
+且美感判斷本來就無法交給 Claude）。
+
+### demo 前的檢查清單
+
+- [ ] `localStorage.removeItem('dynamic-survey-theme')` —— 確保開場是淺色
+- [ ] 用 production build，不是 dev server
+- [ ] 在 LG Gram 上實跑一遍完整 demo 路徑
+- [ ] 確認 DevTools Network 沒有任何外部請求（字體與圖示應全部本地）
+
+### 已知未解問題
+
+- 深淺色切換的圓形揭露曾出現「擴散到接近底部就突然結束、剩餘區域瞬間跳色」。
+  已用 `max(innerHeight, documentElement.scrollHeight)` 計算半徑並乘 1.12 安全邊際緩解。
+  **根因未完全確認**（推測是可滾動頁面的 root 快照高度大於 viewport），
+  若仍復發，直接把安全係數再加大即可。
 
 ## 分支策略
 

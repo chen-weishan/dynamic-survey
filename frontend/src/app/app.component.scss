@@ -1,3 +1,20 @@
+/* aurora 背景是 position:fixed 且 z-index:0，內容必須建立自己的層疊順序疊在它之上。
+   不能改用負 z-index 讓背景沉到底 —— body 有 background-color，
+   負 z-index 的後代會被父元素的背景蓋掉。 */
+/* sticky 必須掛在 app-navbar 而不是元件內部的 <header>：
+   sticky 元素會被父元素的邊界限制，而 app-navbar 的高度就等於 header 高度，
+   掛在 header 上一滾就立刻脫離、完全不會吸頂。 */
+app-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.app-main {
+    position: relative;
+    z-index: 1;
+}
+
 .app-main {
     max-width: 1200px;
     margin: 2rem auto 0;

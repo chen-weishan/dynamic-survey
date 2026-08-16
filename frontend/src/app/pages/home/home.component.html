@@ -1,11 +1,21 @@
 @if (surveys().length > 0) {
   <div class="card-grid">
     @for (survey of surveys(); track survey.id) {
-      <mat-card class="transition-shadow h-full flex flex-col">
+      <!-- 整張卡就是連結：原本只有右下角一顆「立即填寫」，
+           點擊區太小、而且卡片本身沒有任何互動暗示。
+           hover 的回饋交給整張卡的底色（見 .survey-card::after），
+           標題與「立即填寫」不再各自做動作。 -->
+      <mat-card
+        class="survey-card h-full flex flex-col"
+        tabindex="0"
+        role="link"
+        [routerLink]="['/fill', survey.id]"
+        (keyup.enter)="goToFill(survey.id!)"
+      >
         <mat-card-header>
-          <mat-card-title class="text-xl font-bold">{{
-            survey.title
-          }}</mat-card-title>
+          <mat-card-title class="text-xl font-bold">
+            {{ survey.title }}
+          </mat-card-title>
           <mat-card-subtitle>開放至 {{ survey.endDate }}</mat-card-subtitle>
         </mat-card-header>
         <mat-card-content class="flex-grow pt-4">
@@ -13,23 +23,16 @@
             {{ survey.description || "本問卷尚無詳細說明。" }}
           </p>
         </mat-card-content>
-        <mat-card-actions class="p-4 flex justify-end">
-          <button
-            mat-raised-button
-            color="primary"
-            [routerLink]="['/fill', survey.id]"
-          >
-            立即填寫 <mat-icon>edit_note</mat-icon>
-          </button>
-        </mat-card-actions>
-
-        <!-- surveys() 為空時顯示 -->
-        @if (surveys().length === 0) {
-          <div class="bg-white p-12 rounded-xl shadow text-center">
-            <p class="text-xl text-muted">目前沒有進行中的問卷，請稍後再來。</p>
-          </div>
-        }
+        <!-- 取代按鈕的提示：只是一行說明字，不自帶 hover 動作 -->
+        <div class="survey-card__hint flex items-center gap-2">
+          <span>立即填寫</span>
+          <mat-icon>arrow_forward</mat-icon>
+        </div>
       </mat-card>
     }
+  </div>
+} @else {
+  <div class="bg-white p-12 rounded-xl shadow text-center">
+    <p class="text-xl text-muted">目前沒有進行中的問卷，請稍後再來。</p>
   </div>
 }

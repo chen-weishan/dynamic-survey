@@ -1,0 +1,187 @@
+/* ===== 題型切換 rail =====
+
+   取代 mat-button-toggle-group：Material 的 toggle 是三顆各自有邊框的方塊，
+   切換時只有底色瞬間換位，沒有連續感。rail 改成「一顆滑塊在軌道上滑動」。
+
+   滑塊寬度寫死 1/3 而不是量測按鈕寬度 —— 三個標籤都是兩個中文字，等寬成立；
+   用 flex: 1 1 0 強制三顆等寬，確保 translateX(var(--i) * 100%) 剛好對齊。
+
+   刻意用 inline-flex（而非規格裡的 flex）：右邊還有「必填」checkbox 要同一行，
+   block 級的 flex 會把它擠到下一行。 */
+.rail.glass {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 1rem;
+  min-width: 15rem;
+  /* .glass 已給 position: relative，滑塊才定得住 */
+}
+
+/* --i 走 class 而不是 [style.--i] 的行內綁定：
+   行內樣式的優先級高於任何選擇器，下面那組 :has() hover 規則就永遠蓋不過去。 */
+.rail--i0 {
+  --i: 0;
+}
+
+.rail--i1 {
+  --i: 1;
+}
+
+.rail--i2 {
+  --i: 2;
+}
+
+/* .glass 的漸層光邊用掉了 ::before，滑塊只能用 ::after。
+   ::after 在 DOM 順序上排在子元素之後，不給 z-index 會蓋住文字，
+   所以滑塊壓 0、按鈕抬到 1。 */
+.rail::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / 3);
+  transform: translateX(calc(var(--i) * 100%));
+  transition: transform .45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-radius: 0.75rem;
+  background: var(--btn-glass-bg);
+  border: 1.5px solid var(--btn-glass-border);
+  box-shadow: 0 6px 18px -6px var(--glass-glow), inset 0 1px 0 0 var(--glass-highlight);
+  backdrop-filter: blur(10px) saturate(160%);
+  -webkit-backdrop-filter: blur(10px) saturate(160%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* hover 預覽：游標放到第 2/3 顆時滑塊先跑過去，離開後彈回實際選取值。
+
+   直接覆寫 ::after 的 transform，而不是改父層的 --i：
+   少一層 var() 轉手，滑塊位置只由這三條規則和 .rail--iN 決定，行為比較好推理。 */
+.rail:has(.rail__btn:nth-child(1):hover)::after {
+  transform: translateX(0%);
+}
+
+.rail:has(.rail__btn:nth-child(2):hover)::after {
+  transform: translateX(100%);
+}
+
+.rail:has(.rail__btn:nth-child(3):hover)::after {
+  transform: translateX(200%);
+}
+
+.rail__btn {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.8rem;
+  border: none;
+  background: transparent;
+  border-radius: 0.75rem;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color .3s ease;
+}
+
+.rail__btn.is-active,
+.rail__btn:hover {
+  color: var(--btn-glass-text);
+}
+
+/* 游標移到別顆時滑塊離開了選取項，選取項的文字要變回一般色，
+   否則會是「白字配玻璃底」讀不到。 */
+.rail:has(.rail__btn:hover) .rail__btn.is-active:not(:hover) {
+  color: var(--text-primary);
+}
+
+/* ===== 必填開關 =====
+
+   取代 mat-checkbox。方塊打勾是「狀態」，滑塊移動是「動作」——
+   這裡切的是一個開關，用後者比較貼近語意。
+
+   尺寸推算（border-box，含 1.5px 邊框）：
+   軌道外框 50×28 → 內部可用 47×25；滑塊 21，左右內距 2。
+   位移 = 47 - 2*2 - 21 = 22px，剛好對上規格裡的 translateX(22px)，
+   且左右各留 2px、上下由 align-items: center 對稱置中。 */
+.switch-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.switch {
+  /* flex + align-items: center 讓圓鈕自動落在膠囊的上下正中間，
+     不用去算 padding 與邊框加起來剩幾 px */
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  /* 這個專案沒有全域的 box-sizing reset，不寫死就會變成 content-box，
+     50×28 會被邊框和內距撐成 57×31，位移量與左右留白就對不上了 */
+  box-sizing: border-box;
+  width: 50px;
+  height: 28px;
+  padding: 0 2px;
+  border-radius: 999px;
+  background: var(--glass-border-shade);
+  border: 1.5px solid var(--glass-border);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.18);
+  transition: background 0.3s;
+}
+
+.switch-knob {
+  display: block;
+  flex: 0 0 auto;
+  width: 21px;
+  height: 21px;
+  border-radius: 999px;
+  background: var(--glass-highlight);
+  box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.35);
+  /* 帶回彈的曲線：滑塊到位時會微微過衝再收回 */
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 0.3s;
+}
+
+.switch.on {
+  background: var(--btn-glass-bg);
+  border-color: var(--btn-glass-border);
+}
+
+.switch.on .switch-knob {
+  transform: translateX(22px);
+  background: #ffffff;
+}
+
+.switch-field:focus-visible {
+  outline: none;
+
+  .switch {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 3px;
+  }
+}
+
+.switch-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .rail::after,
+  .rail__btn,
+  .switch,
+  .switch-knob {
+    transition: none;
+  }
+}

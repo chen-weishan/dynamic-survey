@@ -1,8 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { SurveyService } from '../../services/survey.service';
 import { Survey } from '../../models/survey.model';
@@ -11,7 +10,6 @@ import { Survey } from '../../models/survey.model';
   imports: [
     CommonModule,
     MatCardModule,
-    MatButtonModule,
     MatIconModule,
     RouterLink,
   ],
@@ -20,7 +18,13 @@ import { Survey } from '../../models/survey.model';
 })
 export class HomeComponent implements OnInit {
   private surveyService = inject(SurveyService);
+  private router = inject(Router);
   surveys = signal<Survey[]>([]);
+
+  /** routerLink 只認滑鼠點擊；卡片是 div，鍵盤 Enter 要自己導 */
+  goToFill(id: number) {
+    this.router.navigate(['/fill', id]);
+  }
 
   ngOnInit() {
     this.surveyService.getActiveSurveys().subscribe({

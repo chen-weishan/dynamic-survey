@@ -1,36 +1,52 @@
 <form [formGroup]="surveyForm">
   <!-- STEP 0: 基本資訊與日期 -->
   @if (activeStep() === 0) {
-  <mat-form-field appearance="outline">
-    <mat-label>問卷標題</mat-label>
-    <input matInput formControlName="title" maxlength="50" />
-    <mat-error>請填寫問卷標題</mat-error>
-  </mat-form-field>
+  <!-- 排版與 STEP 1 的題目卡一致：垂直堆疊 + 玻璃卡容器。
+       原本這些 mat-form-field 是裸的、沒有容器也沒有 flex 佈局，
+       會按 inline-block 的默認行為水平擠成一排。 -->
+  <div class="flex flex-col gap-5">
+    <div class="p-4 border rounded-xl bg-subtle">
+      <div class="flex justify-between mb-3">
+        <span class="text-xl font-bold">問卷基本資訊</span>
+      </div>
 
-  <mat-form-field appearance="outline">
-    <mat-label>問卷說明</mat-label>
-    <textarea matInput formControlName="description" rows="3" maxlength="300"></textarea>
-  </mat-form-field>
+      <mat-form-field appearance="outline" class="w-full mb-3">
+        <mat-label>問卷標題</mat-label>
+        <input matInput formControlName="title" maxlength="50" />
+        <mat-error>請填寫問卷標題</mat-error>
+      </mat-form-field>
 
-  <mat-form-field appearance="outline">
-    <mat-label>開始日期</mat-label>
-    <input matInput [matDatepicker]="startPicker" formControlName="startDate" />
-    <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
-    <mat-datepicker #startPicker></mat-datepicker>
-    <mat-error>請選擇開始日期</mat-error>
-  </mat-form-field>
+      <mat-form-field appearance="outline" class="w-full mb-3">
+        <mat-label>問卷說明</mat-label>
+        <textarea matInput formControlName="description" rows="3" maxlength="300"></textarea>
+      </mat-form-field>
 
-  <mat-form-field appearance="outline">
-    <mat-label>結束日期</mat-label>
-    <input matInput [matDatepicker]="endPicker" formControlName="endDate" />
-    <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
-    <mat-datepicker #endPicker></mat-datepicker>
-    <mat-error>請選擇結束日期</mat-error>
-  </mat-form-field>
+      <!-- 起訖日期並排：兩個欄位語意成對，分兩行反而讀不出關聯 -->
+      <div class="flex flex-wrap gap-4">
+        <mat-form-field appearance="outline" class="flex-1 min-w-[200px]">
+          <mat-label>開始日期</mat-label>
+          <input matInput [matDatepicker]="startPicker" formControlName="startDate" />
+          <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+          <mat-datepicker #startPicker></mat-datepicker>
+          <mat-error>請選擇開始日期</mat-error>
+        </mat-form-field>
 
-  <button type="button" mat-raised-button color="primary" (click)="activeStep.set(1)">
-    下一步：設定題目
-  </button>
+        <mat-form-field appearance="outline" class="flex-1 min-w-[200px]">
+          <mat-label>結束日期</mat-label>
+          <input matInput [matDatepicker]="endPicker" formControlName="endDate" />
+          <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+          <mat-datepicker #endPicker></mat-datepicker>
+          <mat-error>請選擇結束日期</mat-error>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="flex justify-end">
+      <button type="button" mat-raised-button color="primary" (click)="activeStep.set(1)">
+        下一步：設定題目
+      </button>
+    </div>
+  </div>
   }
 
   <!-- STEP 1: 題目設定 -->
@@ -53,15 +69,38 @@
         <mat-error>請填寫題目標題</mat-error>
       </mat-form-field>
 
-      <mat-button-toggle-group formControlName="type" (change)="onTypeChange(i)" class="mb-3">
-        @for (t of questionTypes; track t.value) {
-        <mat-button-toggle [value]="t.value">
-          {{ t.label }}
-        </mat-button-toggle>
-        }
-      </mat-button-toggle-group>
+      <!-- 題型切換：滑動的玻璃選取塊（rail）。
+           --i 綁在選中的索引上，hover 時由 :has() 暫時把塊拉到游標下方，
+           滑鼠離開就彈回實際選取項 —— 所以「預覽」與「已選」用的是同一顆塊。 -->
+      <!-- rail 與必填開關同一列，交給 flex 做上下置中；
+           兩者高度不同，靠 inline 元素的 baseline 對不齊。 -->
+      <div class="flex items-center gap-4 mb-3">
+        <div class="rail glass" [class.rail--i0]="typeIndex(i) === 0" [class.rail--i1]="typeIndex(i) === 1"
+          [class.rail--i2]="typeIndex(i) === 2">
+          @for (t of questionTypes; track t.value) {
+          <button type="button" class="rail__btn" [class.is-active]="q.get('type')?.value === t.value"
+            [attr.aria-pressed]="q.get('type')?.value === t.value" (click)="setType(i, t.value)">
+            {{ t.label }}
+          </button>
+          }
+        </div>
 
-      <mat-checkbox formControlName="required" class="ml-4">必填</mat-checkbox>
+        <!-- 必填：自製開關。mat-checkbox 是「有沒有打勾」的靜態方塊，
+             這裡要的是滑塊帶回彈的切換手感，所以自己畫。
+             整顆是 role="switch" 的 button，鍵盤 Enter / Space 原生就能切。 -->
+        <button
+          type="button"
+          class="switch-field"
+          role="switch"
+          [attr.aria-checked]="q.get('required')?.value"
+          (click)="toggleRequired(i)"
+        >
+          <span class="switch" [class.on]="q.get('required')?.value">
+            <span class="switch-knob"></span>
+          </span>
+          <span class="switch-text">必填</span>
+        </button>
+      </div>
 
       <!-- 選項區域 (只有非純文字題時顯示) -->
       @if (q.get("type")?.value !== "TEXT") {
